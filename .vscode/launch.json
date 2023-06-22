@@ -1,0 +1,98 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+
+    {
+      "name": "Display main help",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/umod-copy-paste-cleaner/bin/Debug/net6.0/umod-copy-paste-cleaner.exe",
+      "args": [ "--help" ],
+      "cwd": "${workspaceFolder}/umod-copy-paste-cleaner",
+      "console": "internalConsole",
+      "stopAtEntry": false
+    },
+    {
+      "name": "Display info help",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/umod-copy-paste-cleaner/bin/Debug/net6.0/umod-copy-paste-cleaner.exe",
+      "args": [ "get-info", "--help" ],
+      "cwd": "${workspaceFolder}/umod-copy-paste-cleaner",
+      "console": "internalConsole",
+      "stopAtEntry": false
+    },
+    {
+      "name": "Display init help",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/umod-copy-paste-cleaner/bin/Debug/net6.0/umod-copy-paste-cleaner.exe",
+      "args": [ "init-settings", "--help" ],
+      "cwd": "${workspaceFolder}/umod-copy-paste-cleaner",
+      "console": "internalConsole",
+      "stopAtEntry": false
+    },
+    {
+      "name": "Display clean help",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/umod-copy-paste-cleaner/bin/Debug/net6.0/umod-copy-paste-cleaner.exe",
+      "args": [ "do-clean", "--help" ],
+      "cwd": "${workspaceFolder}/umod-copy-paste-cleaner",
+      "console": "internalConsole",
+      "stopAtEntry": false
+    },
+    {
+      "name": "Do init settings",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/umod-copy-paste-cleaner/bin/Debug/net6.0/umod-copy-paste-cleaner.exe",
+      "args": [ "init-settings" ],
+      "cwd": "${workspaceFolder}/umod-copy-paste-cleaner",
+      "console": "internalConsole",
+      "stopAtEntry": false
+    },
+    {
+      "name": "Do clean test data",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/umod-copy-paste-cleaner/bin/Debug/net6.0/umod-copy-paste-cleaner.exe",
+      "args": [ "do-clean",
+        "--input", "inputs",
+        "--output", "outputs",
+        "--overwrite",
+        "--filter-id", "default-clean"
+      ],
+      "cwd": "${workspaceFolder}/test-data",
+      "console": "internalConsole",
+      "stopAtEntry": false
+    },
+    {
+      // Use IntelliSense to find out which attributes exist for C# debugging
+      // Use hover for the description of the existing attributes
+      // For further information visit https://github.com/OmniSharp/omnisharp-vscode/blob/master/debugger-launchjson.md
+      "name": ".NET Core Launch (console)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      // If you have changed target frameworks, make sure to update the program path.
+      "program": "${workspaceFolder}/umod-copy-paste-cleaner/bin/Debug/net6.0/umod-copy-paste-cleaner.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/umod-copy-paste-cleaner",
+      // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
+      "console": "internalConsole",
+      "stopAtEntry": false
+    },
+    {
+      "name": ".NET Core Attach",
+      "type": "coreclr",
+      "request": "attach"
+    }
+  ]
+}

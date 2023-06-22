@@ -16,7 +16,7 @@ namespace WouayNote.UModeCopyPasteCleaner {
 
     private const int SupportedJsonSettingsVersion = 1;
     private const int SupportedJsonDataMajor = 4;
-    private static readonly string ThisAppFilePath = Path.GetFullPath(System.Reflection.Assembly.GetExecutingAssembly().Location);
+    private static readonly string ThisAppFilePath = Path.GetFullPath(Assembly.GetExecutingAssembly().Location);
     private static readonly string SettingsFilePath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(ThisAppFilePath) + ".\\", Path.GetFileNameWithoutExtension(ThisAppFilePath) + ".json"));
 
     public class Settings {

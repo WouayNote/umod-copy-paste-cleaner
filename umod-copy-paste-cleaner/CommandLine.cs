@@ -16,6 +16,7 @@ namespace WouayNote.UModeCopyPasteCleaner {
 
     private const int SupportedJsonSettingsVersion = 1;
     private const int SupportedJsonDataMajor = 4;
+    private const string JsonSchemaResourceName = "settings-schema-v1";
     private static readonly string ThisAppFilePath = Path.GetFullPath(Assembly.GetExecutingAssembly().Location);
     private static readonly string SettingsFilePath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(ThisAppFilePath) + ".\\", Path.GetFileNameWithoutExtension(ThisAppFilePath) + ".json"));
 
@@ -223,18 +224,10 @@ namespace WouayNote.UModeCopyPasteCleaner {
         Console.Out.WriteLine("A sample file can be created by executing following command: " + Path.GetFileNameWithoutExtension(ThisAppFilePath) + " " + InitSettingsVerb);
         return 1;
       }
-      //load settings schema
-      String settingsJsonSchema;
-      using (Stream? stream = Assembly.GetExecutingAssembly()?.GetManifestResourceStream("WouayNote.UModeCopyPasteCleaner.settings-schema.json"))
-      using (StreamReader? reader = stream == null ? null : new StreamReader(stream)) {
-        if (reader == null) {
-          throw new Exception("SEVERE: Unable to get schema settings resource file. Contact the programmer.");
-        }
-        settingsJsonSchema = reader.ReadToEnd();
-      }
       //load settings
       Console.Out.Write("Start loading '" + SettingsFilePath + "'... ");
       Settings settings;
+      string? settingsJsonSchema = Resources.ResourceManager.GetString(JsonSchemaResourceName) ?? throw new Exception("SEVERE: Unable to get schema settings resource file. Contact the programmer.");
       try {
         JObject settingsJson = JObject.Parse(File.ReadAllText(SettingsFilePath));
         IList<ValidationError> errors = settingsJson.IsValid(JSchema.Parse(settingsJsonSchema), out errors) || errors == null ? new List<ValidationError>() : errors;
@@ -316,6 +309,7 @@ namespace WouayNote.UModeCopyPasteCleaner {
     }
 
     private static int ProcessCleanFile(ArgumentsCleanFile arguments, Settings settings) {
+      Console.Out.WriteLine();
       //check input file exists
       arguments.InputPath = arguments.InputPath == null ? "" : Path.GetFullPath(arguments.InputPath);
       if (!File.Exists(arguments.InputPath)) {

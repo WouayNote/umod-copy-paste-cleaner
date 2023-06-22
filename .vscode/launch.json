@@ -66,8 +66,8 @@
       "args": [ "do-clean",
         "--input", "inputs",
         "--output", "outputs",
-        "--overwrite",
-        "--filter-id", "default-clean"
+        "--filter-id", "default-clean",
+        "--overwrite"
       ],
       "cwd": "${workspaceFolder}/test-data",
       "console": "internalConsole",

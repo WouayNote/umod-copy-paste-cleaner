@@ -1,0 +1,39 @@
+{
+  "profiles": {
+    "Display root help": {
+      "commandName": "Project",
+      "commandLineArgs": "--help",
+      "workingDirectory": "$(SolutionDir)\\test-data"
+    },
+    "Display info help": {
+      "commandName": "Project",
+      "commandLineArgs": "get-info --help",
+      "workingDirectory": "$(SolutionDir)\\test-data"
+    },
+    "Display init help": {
+      "commandName": "Project",
+      "commandLineArgs": "init-settings --help",
+      "workingDirectory": "$(SolutionDir)\\test-data"
+    },
+    "Display clean help": {
+      "commandName": "Project",
+      "commandLineArgs": "do-clean --help",
+      "workingDirectory": "$(SolutionDir)\\test-data"
+    },
+    "Clean inputs to outputs": {
+      "commandName": "Project",
+      "commandLineArgs": "do-clean --input inputs --output outputs --filter-id default-clean",
+      "workingDirectory": "$(SolutionDir)\\test-data"
+    },
+    "Clean inputs to outputs (overwrite)": {
+      "commandName": "Project",
+      "commandLineArgs": "do-clean --input inputs --output outputs --filter-id default-clean --overwrite",
+      "workingDirectory": "$(SolutionDir)\\test-data"
+    },
+    "Clean inputs to outputs (full)": {
+      "commandName": "Project",
+      "commandLineArgs": "do-clean --input inputs --output outputs --filter-id default-clean --overwrite --owner-id 9999 --lock-code 9999",
+      "workingDirectory": "$(SolutionDir)\\test-data"
+    }
+  }
+}

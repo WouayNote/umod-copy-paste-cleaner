@@ -89,7 +89,7 @@ namespace WouayNote.UModeCopyPasteCleaner {
       public bool Overwrite { get; set; }
 
       public const string FilterIdOption = "filter-id";
-      [Option(FilterIdOption, Required = false, HelpText = "Optional if the settings file contains only one filter.\nThe id of the filter that must be used for removing and switching-off entities.\nCaution: the filter name is case sensitive.")]
+      [Option(FilterIdOption, Required = false, HelpText = "Optional if the settings file contains only one filter.\nThe id of the filter that must be used for removing and switching-off entities.\nCaution: the filter id is case sensitive.")]
       public string? FilterId { get; set; }
 
       [Option("owner-id", Required = false, HelpText = "Optional. The id of owner that must be assigned to entities.")]
@@ -187,7 +187,7 @@ namespace WouayNote.UModeCopyPasteCleaner {
             filters = new() {
               new() { filterId = "clean-nothing" },
               new() {
-                filterId = "defaut-clean",
+                filterId = "default-clean",
                 removePrefabs = new string[] {
                   "assets/prefabs/deployable/bed/*",
                   "assets/prefabs/deployable/elevator/*",
@@ -247,8 +247,8 @@ namespace WouayNote.UModeCopyPasteCleaner {
       }
       IEnumerable<String> duplicateFilters = settings.filters.Select(filter => filter.filterId).GroupBy(name => name).Where(group => group.Count() > 1).Select(group => group.Key);
       if (duplicateFilters.Any()) {
-        Console.Out.WriteLine("Operation aborted as settings file contains duplicate filter names: '" + SettingsFilePath + "'.");
-        Console.Out.WriteLine("Here is the list of duplicated filter names: '" + String.Join("', '", duplicateFilters) + "'.");
+        Console.Out.WriteLine("Operation aborted as settings file contains duplicate filter ids: '" + SettingsFilePath + "'.");
+        Console.Out.WriteLine("Here is the list of duplicated filter ids: '" + String.Join("', '", duplicateFilters) + "'.");
         Console.Out.WriteLine("A sample file can be created by executing following command: " + Path.GetFileNameWithoutExtension(ThisAppFilePath) + " " + InitSettingsVerb);
         return 1;
       }
@@ -318,10 +318,10 @@ namespace WouayNote.UModeCopyPasteCleaner {
           Console.Out.WriteLine("Operation aborted as there are several filters available whereas no --" + ArgumentsCleanFile.FilterIdOption + " option has been specified.");
         }
         else {
-          Console.Out.WriteLine("Operation aborted as filter named '" + arguments.FilterId + "' can not be found in: '" + SettingsFilePath + "'.");
+          Console.Out.WriteLine("Operation aborted as filter id '" + arguments.FilterId + "' can not be found in: '" + SettingsFilePath + "'.");
         }
         Console.Out.WriteLine("Here is the list of filters available: '" + String.Join("', '", settings.filters.Select(filter => filter.filterId)) + "'.");
-        Console.Out.WriteLine("As a reminder, the filter name is case sensitive.");
+        Console.Out.WriteLine("As a reminder, the filter id is case sensitive.");
         return 1;
       }
       //check code lock to be set is 4 digits

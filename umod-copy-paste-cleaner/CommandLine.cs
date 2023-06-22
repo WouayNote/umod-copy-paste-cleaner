@@ -12,13 +12,25 @@ namespace WouayNote.UModeCopyPasteCleaner {
 
   class CommandLine {
 
-    private static readonly int SupportedMajor = 4;
+    private const int SupportedJsonSettingsVersion = 1;
+    private const int SupportedJsonDataMajor = 4;
     private static readonly string ThisAppFilePath = Path.GetFullPath(System.Reflection.Assembly.GetExecutingAssembly().Location);
-    private static readonly string FiltersFilePath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(ThisAppFilePath) + ".\\", Path.GetFileNameWithoutExtension(ThisAppFilePath) + ".json"));
+    private static readonly string SettingsFilePath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(ThisAppFilePath) + ".\\", Path.GetFileNameWithoutExtension(ThisAppFilePath) + ".json"));
 
-    private class Filter {
-      public List<string> RemovedPrefabs = new ();
-      public List<string> SwitchedOffPrefabs = new ();
+    public class Settings {
+      [JsonProperty(PropertyName="version")]
+      public int version = 1;
+      [JsonProperty(PropertyName="filters")]
+      public List<Filter> filters = new();
+
+      public class Filter {
+        [JsonProperty(PropertyName="filter-id")]
+        public string filterId = "";
+        [JsonProperty(PropertyName="removed-prefabs")]
+        public List<string> removePrefabs = new();
+        [JsonProperty(PropertyName="switchedoff-prefabs")]
+        public List<string> switchOffPrefabs = new();
+      }
     }
 
     [Verb("get-info", HelpText = "Get information about a copied base.")]
@@ -38,15 +50,15 @@ namespace WouayNote.UModeCopyPasteCleaner {
 
     }
 
-    private const string InstallFilterVerb = "install-filters";
-    [Verb(InstallFilterVerb, HelpText = "Create a sample filters file that can be used to clean copied bases.\nThis file is created next to this program, with same name but with .json extention.\nThis file can contains different filters identified by a name and can be enriched if it is necessary.")]
-    public class ArgumentsInstallFilters {
+    private const string InitSettingsVerb = "init-settings";
+    [Verb(InitSettingsVerb, HelpText = "Create a settings file with samples that can be used to clean copied bases.\nThis file is created next to this program, with same name but with .json extention.\nThis file can contains different filters identified by a name and can be enriched if it is necessary.")]
+    public class ArgumentsInitSettings {
 
       [Usage]
       public static IEnumerable<Example> Examples {
         get {
           return new List<Example>() {
-            new Example("Create the sample filters file", new ArgumentsInstallFilters())
+            new Example("Create the settings file", new ArgumentsInitSettings())
           };
         }
       }
@@ -59,8 +71,8 @@ namespace WouayNote.UModeCopyPasteCleaner {
       public static IEnumerable<Example> Examples {
         get {
           return new List<Example>() {
-            new Example("Clean a file containing a copied base", new ArgumentsCleanFile { InputPath = "c:\\copied-base-file.json", OutputPath = "c:\\cleaned-base-file.json", Filter = "default" }),
-            new Example("Clean a directory containing copied bases files", new ArgumentsCleanFile { InputPath = "c:\\copied-bases-dir", OutputPath = "c:\\cleaned-bases-dir", Filter = "default" }),
+            new Example("Clean a file containing a copied base", new ArgumentsCleanFile { InputPath = "c:\\copied-base-file.json", OutputPath = "c:\\cleaned-base-file.json", FilterId = "default" }),
+            new Example("Clean a directory containing copied bases files", new ArgumentsCleanFile { InputPath = "c:\\copied-bases-dir", OutputPath = "c:\\cleaned-bases-dir", FilterId = "default" }),
           };
         }
       }
@@ -76,9 +88,9 @@ namespace WouayNote.UModeCopyPasteCleaner {
       [Option("overwrite", Required = false, HelpText = "Optional. When set, overwrite the output file if already exists.")]
       public bool Overwrite { get; set; }
 
-      public const string FilterOption = "filter";
-      [Option(FilterOption, Required = false, HelpText = "Optional if the filters file contains only one filter.\nThe name of the filter that must be applied for removing and switching-off entities.\nCaution: the filter name is case sensitive.")]
-      public string? Filter { get; set; }
+      public const string FilterIdOption = "filter-id";
+      [Option(FilterIdOption, Required = false, HelpText = "Optional if the settings file contains only one filter.\nThe id of the filter that must be used for removing and switching-off entities.\nCaution: the filter name is case sensitive.")]
+      public string? FilterId { get; set; }
 
       [Option("owner-id", Required = false, HelpText = "Optional. The id of owner that must be assigned to entities.")]
       public long OwnerId { get; set; }
@@ -92,9 +104,9 @@ namespace WouayNote.UModeCopyPasteCleaner {
 
     public static int Main(string[] args) {
       //parsing command line arguments
-      return Parser.Default.ParseArguments<ArgumentsGetInfo, ArgumentsInstallFilters, ArgumentsCleanFile>(args).MapResult(
+      return Parser.Default.ParseArguments<ArgumentsGetInfo, ArgumentsInitSettings, ArgumentsCleanFile>(args).MapResult(
         (ArgumentsGetInfo arguments) => ProcessInfo(arguments),
-        (ArgumentsInstallFilters arguments) => ProcessInstall(arguments),
+        (ArgumentsInitSettings arguments) => ProcessInstall(arguments),
         (ArgumentsCleanFile arguments) => ProcessClean(arguments),
         errors => 1
       );
@@ -120,8 +132,13 @@ namespace WouayNote.UModeCopyPasteCleaner {
       }
       Console.Out.WriteLine("done.");
       JToken? majorVersion = data.SelectToken("protocol.version.Major", false);
-      if (majorVersion == null || majorVersion.Value<int>() != SupportedMajor) {
-        Console.Out.WriteLine("Operation aborted as input file is not a copied base or its major version is not supported.");
+      if (majorVersion == null) {
+        Console.Out.WriteLine("Operation aborted as input file is not a copied base.");
+        return 1;
+      }
+      if (majorVersion.Value<int>() != SupportedJsonDataMajor) {
+        Console.Out.WriteLine("Operation aborted as input file major version is not supported.");
+        Console.Out.WriteLine("Expected major is '" + SupportedJsonDataMajor + "' whereas current major is " + majorVersion.ToString() + ".");
         return 1;
       }
       //count entities per owner
@@ -151,41 +168,41 @@ namespace WouayNote.UModeCopyPasteCleaner {
       return 0;
     }
 
-    private static int ProcessInstall(ArgumentsInstallFilters arguments) {
+    private static int ProcessInstall(ArgumentsInitSettings arguments) {
       //check output file does not exist if no force option
-      if (File.Exists(FiltersFilePath)) {
-        Console.Out.WriteLine("Operation aborted as a filters file already exists: '" + FiltersFilePath + "'.");
+      if (File.Exists(SettingsFilePath)) {
+        Console.Out.WriteLine("Operation aborted as a settings file already exists: '" + SettingsFilePath + "'.");
         return 1;
       }
-      if (Directory.Exists(FiltersFilePath)) {
-        Console.Out.WriteLine("Operation aborted as target filters file path is an existing directory: '" + FiltersFilePath + "'.");
+      if (Directory.Exists(SettingsFilePath)) {
+        Console.Out.WriteLine("Operation aborted as settings file path is an existing directory: '" + SettingsFilePath + "'.");
         return 1;
       }
-      //create the sample
-      Dictionary<string, Filter> sampleFilters = new () {
-        { "clean-nothing", new() },
-        { "default-clean", new () {
-          RemovedPrefabs = new string[] {
-            "assets/prefabs/deployable/bed/*",
-            "assets/prefabs/deployable/elevator/*",
-            "assets/prefabs/deployable/playerioents/industrialadaptors/*",
-            "assets/prefabs/deployable/playerioents/industrialcrafter/*",
-            "assets/prefabs/deployable/sleeping bag/*",
-            "assets/content/vehicles/modularcar/module_entities/*"
-          }.ToList(),
-          SwitchedOffPrefabs = new string[] {
-            "assets/prefabs/deployable/playerioents/industrialconveyor/industrialconveyor.deployed.prefab",
-            "assets/prefabs/voiceaudio/boombox/boombox.deployed.prefab"
-          }.ToList()
-        } }
-      };
-
       //write data to output file
-      Console.Out.Write("Start writing filters file '" + FiltersFilePath + "'... ");
+      Console.Out.Write("Start writing settings file '" + SettingsFilePath + "'... ");
       try {
-        using (StreamWriter streamWriter = File.CreateText(FiltersFilePath))
+        using (StreamWriter streamWriter = File.CreateText(SettingsFilePath))
         using (JsonTextWriter jsonWriter = new (streamWriter)) {
-          new JsonSerializer { Formatting = Formatting.Indented }.Serialize(jsonWriter, sampleFilters);
+          new JsonSerializer { Formatting = Formatting.Indented }.Serialize(jsonWriter, new Settings() {
+            filters = new() {
+              new() { filterId = "clean-nothing" },
+              new() {
+                filterId = "defaut-clean",
+                removePrefabs = new string[] {
+                  "assets/prefabs/deployable/bed/*",
+                  "assets/prefabs/deployable/elevator/*",
+                  "assets/prefabs/deployable/playerioents/industrialadaptors/*",
+                  "assets/prefabs/deployable/playerioents/industrialcrafter/*",
+                  "assets/prefabs/deployable/sleeping bag/*",
+                  "assets/content/vehicles/modularcar/module_entities/*"
+                }.ToList(),
+                switchOffPrefabs = new string[] {
+                  "assets/prefabs/deployable/playerioents/industrialconveyor/industrialconveyor.deployed.prefab",
+                  "assets/prefabs/voiceaudio/boombox/boombox.deployed.prefab"
+                }.ToList()
+              }
+            }
+          });
         }
       }
       catch (Exception ex) {
@@ -198,17 +215,17 @@ namespace WouayNote.UModeCopyPasteCleaner {
     }
 
     private static int ProcessClean(ArgumentsCleanFile arguments) {
-      //check filters file
-      if (!File.Exists(FiltersFilePath)) {
-        Console.Out.WriteLine("Operation aborted as filters file can not be found: '" + FiltersFilePath + "'.");
-        Console.Out.WriteLine("A sample file can be created by executing following command: " + Path.GetFileNameWithoutExtension(ThisAppFilePath) + " " + InstallFilterVerb);
+      //check settings file
+      if (!File.Exists(SettingsFilePath)) {
+        Console.Out.WriteLine("Operation aborted as settings file can not be found: '" + SettingsFilePath + "'.");
+        Console.Out.WriteLine("A sample file can be created by executing following command: " + Path.GetFileNameWithoutExtension(ThisAppFilePath) + " " + InitSettingsVerb);
         return 1;
       }
-      //load filters
-      Console.Out.Write("Start loading '" + FiltersFilePath + "'... ");
-      Dictionary<string, Filter> filters;
+      //load settings
+      Console.Out.Write("Start loading '" + SettingsFilePath + "'... ");
+      Settings settings;
       try {
-        filters = JsonConvert.DeserializeObject<Dictionary<string, Filter>>(File.ReadAllText(FiltersFilePath)) ?? new();
+        settings = JsonConvert.DeserializeObject<Settings>(File.ReadAllText(SettingsFilePath)) ?? throw new Exception("Json settings deserializer returned null.");
       }
       catch (Exception ex) {
         Console.Out.WriteLine("failed.");
@@ -216,10 +233,23 @@ namespace WouayNote.UModeCopyPasteCleaner {
         return 1;
       }
       Console.Out.WriteLine("done.");
-      //check filters content
-      if (!filters.Any()) {
-        Console.Out.WriteLine("Operation aborted as filters file does not contain any filter: '" + FiltersFilePath + "'.");
-        Console.Out.WriteLine("A sample file can be created by executing following command: " + Path.GetFileNameWithoutExtension(ThisAppFilePath) + " " + InstallFilterVerb);
+      //check settings content
+      if (settings.version != SupportedJsonSettingsVersion) {
+        Console.Out.WriteLine("Operation aborted as settings file version is not supported.");
+        Console.Out.WriteLine("Expected version is '" + SupportedJsonSettingsVersion + "' whereas current version is '" + settings.version + "'.");
+        Console.Out.WriteLine("A sample file can be created by executing following command: " + Path.GetFileNameWithoutExtension(ThisAppFilePath) + " " + InitSettingsVerb);
+        return 1;
+      }
+      if (!settings.filters.Any()) {
+        Console.Out.WriteLine("Operation aborted as settings file does not contain any filter: '" + SettingsFilePath + "'.");
+        Console.Out.WriteLine("A sample file can be created by executing following command: " + Path.GetFileNameWithoutExtension(ThisAppFilePath) + " " + InitSettingsVerb);
+        return 1;
+      }
+      IEnumerable<String> duplicateFilters = settings.filters.Select(filter => filter.filterId).GroupBy(name => name).Where(group => group.Count() > 1).Select(group => group.Key);
+      if (duplicateFilters.Any()) {
+        Console.Out.WriteLine("Operation aborted as settings file contains duplicate filter names: '" + SettingsFilePath + "'.");
+        Console.Out.WriteLine("Here is the list of duplicated filter names: '" + String.Join("', '", duplicateFilters) + "'.");
+        Console.Out.WriteLine("A sample file can be created by executing following command: " + Path.GetFileNameWithoutExtension(ThisAppFilePath) + " " + InitSettingsVerb);
         return 1;
       }
       //check input
@@ -261,14 +291,14 @@ namespace WouayNote.UModeCopyPasteCleaner {
       foreach (KeyValuePair<string, string> ioPath in ioPathMapping.OrderBy(io => io.Key)) {
         arguments.InputPath = ioPath.Key;
         arguments.OutputPath = ioPath.Value;
-        if (ProcessCleanFile(arguments, filters) != 0) {
+        if (ProcessCleanFile(arguments, settings) != 0) {
           return 1;
         }
       }
       return 0;
     }
 
-    private static int ProcessCleanFile(ArgumentsCleanFile arguments, Dictionary<string, Filter> filters) {
+    private static int ProcessCleanFile(ArgumentsCleanFile arguments, Settings settings) {
       //check input file exists
       arguments.InputPath = arguments.InputPath == null ? "" : Path.GetFullPath(arguments.InputPath);
       if (!File.Exists(arguments.InputPath)) {
@@ -282,15 +312,15 @@ namespace WouayNote.UModeCopyPasteCleaner {
         return 1;
       }
       //check setting file exists
-      arguments.Filter = arguments.Filter == null && filters.Count == 1 ? filters.First().Key : arguments.Filter;
-      if (arguments.Filter == null || !filters.ContainsKey(arguments.Filter)) {
-        if (arguments.Filter == null) {
-          Console.Out.WriteLine("Operation aborted as there are several filters available whereas no --" + ArgumentsCleanFile.FilterOption + " option has been specified.");
+      arguments.FilterId = arguments.FilterId == null && settings.filters.Count == 1 ? settings.filters.First().filterId : arguments.FilterId;
+      if (arguments.FilterId == null || !settings.filters.Where( filter => filter.filterId.Equals(arguments.FilterId)).Any()) {
+        if (arguments.FilterId == null) {
+          Console.Out.WriteLine("Operation aborted as there are several filters available whereas no --" + ArgumentsCleanFile.FilterIdOption + " option has been specified.");
         }
         else {
-          Console.Out.WriteLine("Operation aborted as filter named '" + arguments.Filter + "' can not be found in: '" + FiltersFilePath + "'.");
+          Console.Out.WriteLine("Operation aborted as filter named '" + arguments.FilterId + "' can not be found in: '" + SettingsFilePath + "'.");
         }
-        Console.Out.WriteLine("Here is the list of filters available: '" + String.Join("', '", filters.Keys) + "'.");
+        Console.Out.WriteLine("Here is the list of filters available: '" + String.Join("', '", settings.filters.Select(filter => filter.filterId)) + "'.");
         Console.Out.WriteLine("As a reminder, the filter name is case sensitive.");
         return 1;
       }
@@ -313,23 +343,28 @@ namespace WouayNote.UModeCopyPasteCleaner {
       Console.Out.WriteLine("done.");
       //check major revision of input
       JToken? majorVersion = data.SelectToken("protocol.version.Major", false);
-      if (majorVersion == null || majorVersion.Value<int>() != SupportedMajor) {
-        Console.Out.WriteLine("Operation aborted as input file is not a copied base or its major version is not supported.");
+      if (majorVersion == null) {
+        Console.Out.WriteLine("Operation aborted as input file is not a copied base.");
+        return 1;
+      }
+      if (majorVersion.Value<int>() != SupportedJsonDataMajor) {
+        Console.Out.WriteLine("Operation aborted as input file major version is not supported.");
+        Console.Out.WriteLine("Expected major is '" + SupportedJsonDataMajor + "' whereas current major is " + majorVersion.ToString() + ".");
         return 1;
       }
       //filter nodes
-      Filter filter = filters[arguments.Filter];
+      Settings.Filter filter = settings.filters.Where(filter => filter.filterId.Equals(arguments.FilterId)).First();
       if (filter != null) {
         //remove prefabs
-        if (filter.RemovedPrefabs.Any()) {
+        if (filter.removePrefabs.Any()) {
           Console.Out.Write("Start removing prefabs entities... ");
-          data["entities"]?.Where(e => PrefabMatchWith(e.Value<string>("prefabname"), filter.RemovedPrefabs)).ToList().ForEach(e => e.Remove());
+          data["entities"]?.Where(e => PrefabMatchWith(e.Value<string>("prefabname"), filter.removePrefabs)).ToList().ForEach(e => e.Remove());
           Console.Out.WriteLine("done.");
         }
         //switch off prefabs
-        if (filter.SwitchedOffPrefabs.Any()) {
+        if (filter.switchOffPrefabs.Any()) {
           Console.Out.Write("Start switching off prefabs entities... ");
-          data["entities"]?.Where(e => PrefabMatchWith(e.Value<string>("prefabname"), filter.SwitchedOffPrefabs)).Select(e => e.SelectToken("flags.On", false)).Where(v => v != null && v.Value<bool>()).ToList().ForEach(v => v?.Parent?.Remove());
+          data["entities"]?.Where(e => PrefabMatchWith(e.Value<string>("prefabname"), filter.switchOffPrefabs)).Select(e => e.SelectToken("flags.On", false)).Where(v => v != null && v.Value<bool>()).ToList().ForEach(v => v?.Parent?.Remove());
           Console.Out.WriteLine("done.");
         }
       }

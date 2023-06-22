@@ -2,10 +2,12 @@
 using CommandLine.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Schema;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 
 namespace WouayNote.UModeCopyPasteCleaner {
@@ -19,7 +21,7 @@ namespace WouayNote.UModeCopyPasteCleaner {
 
     public class Settings {
       [JsonProperty(PropertyName="version")]
-      public int version = 1;
+      public int version = SupportedJsonSettingsVersion;
       [JsonProperty(PropertyName="filters")]
       public List<Filter> filters = new();
 
@@ -221,15 +223,30 @@ namespace WouayNote.UModeCopyPasteCleaner {
         Console.Out.WriteLine("A sample file can be created by executing following command: " + Path.GetFileNameWithoutExtension(ThisAppFilePath) + " " + InitSettingsVerb);
         return 1;
       }
+      //load settings schema
+      String settingsJsonSchema;
+      using (Stream? stream = Assembly.GetExecutingAssembly()?.GetManifestResourceStream("WouayNote.UModeCopyPasteCleaner.settings-schema.json"))
+      using (StreamReader? reader = stream == null ? null : new StreamReader(stream)) {
+        if (reader == null) {
+          throw new Exception("SEVERE: Unable to get schema settings resource file. Contact the programmer.");
+        }
+        settingsJsonSchema = reader.ReadToEnd();
+      }
       //load settings
       Console.Out.Write("Start loading '" + SettingsFilePath + "'... ");
       Settings settings;
       try {
-        settings = JsonConvert.DeserializeObject<Settings>(File.ReadAllText(SettingsFilePath)) ?? throw new Exception("Json settings deserializer returned null.");
+        JObject settingsJson = JObject.Parse(File.ReadAllText(SettingsFilePath));
+        IList<ValidationError> errors = settingsJson.IsValid(JSchema.Parse(settingsJsonSchema), out errors) || errors == null ? new List<ValidationError>() : errors;
+        foreach (ValidationError error in errors) {
+          throw new Exception("Error detected at position [line " + error.LineNumber + ", char " + error.LinePosition + "]: " + error.Message);
+        }
+        settings = settingsJson.ToObject<Settings>() ?? throw new Exception("Json settings deserializer returned null.");
       }
       catch (Exception ex) {
         Console.Out.WriteLine("failed.");
         Console.Out.WriteLine("Not a valid json file. " + ex.Message);
+        Console.Out.WriteLine("A sample file can be created by executing following command: " + Path.GetFileNameWithoutExtension(ThisAppFilePath) + " " + InitSettingsVerb);
         return 1;
       }
       Console.Out.WriteLine("done.");

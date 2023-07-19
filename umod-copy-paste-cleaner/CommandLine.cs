@@ -197,6 +197,7 @@ namespace WouayNote.UModeCopyPasteCleaner {
                   "assets/prefabs/deployable/playerioents/industrialadaptors/*",
                   "assets/prefabs/deployable/playerioents/industrialcrafter/*",
                   "assets/prefabs/deployable/sleeping bag/*",
+                  "assets/prefabs/misc/xmas/*",
                   "assets/content/vehicles/modularcar/module_entities/*"
                 }.ToList(),
                 switchOffPrefabs = new string[] {

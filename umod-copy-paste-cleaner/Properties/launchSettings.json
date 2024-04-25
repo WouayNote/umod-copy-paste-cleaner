@@ -20,6 +20,11 @@
       "commandLineArgs": "do-clean --help",
       "workingDirectory": "$(SolutionDir)\\test-data"
     },
+    "Create init settings": {
+      "commandName": "Project",
+      "commandLineArgs": "init-settings",
+      "workingDirectory": "$(SolutionDir)\\test-data"
+    },
     "Clean inputs to outputs": {
       "commandName": "Project",
       "commandLineArgs": "do-clean --input inputs --output outputs --filter-id default-clean",

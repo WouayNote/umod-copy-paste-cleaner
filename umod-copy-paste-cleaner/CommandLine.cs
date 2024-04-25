@@ -14,8 +14,7 @@ namespace WouayNote.UModeCopyPasteCleaner {
 
   class CommandLine {
 
-    private const int SupportedJsonSettingsVersion = 1;
-    private const int SupportedJsonDataMajor = 4;
+    private const int SupportedJsonSettingsVersion = 2;
     private const string JsonSchemaResourceName = "settings-schema-v1";
     private static readonly string ThisAppFilePath = Path.GetFullPath(Environment.ProcessPath);
     private static readonly string SettingsFilePath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(ThisAppFilePath) + ".\\", Path.GetFileNameWithoutExtension(ThisAppFilePath) + ".json"));
@@ -33,6 +32,8 @@ namespace WouayNote.UModeCopyPasteCleaner {
         public List<string> removePrefabs = new();
         [JsonProperty(PropertyName="switchedoff-prefabs")]
         public List<string> switchOffPrefabs = new();
+        [JsonProperty(PropertyName= "removed-items-from-prefabs")]
+        public List<string> removeItemsFromPrefabs = new();
       }
     }
 
@@ -103,6 +104,9 @@ namespace WouayNote.UModeCopyPasteCleaner {
 
       [Option("lock-remove", Required = false, HelpText = "Optional. When set, remove all code and key locks.")]
       public bool LockRemoveAll { get; set; }
+
+      [Option("removed-items-from-prefabs", Required = false, HelpText = "Optional. When set, remove all items from containers specified in filter.")]
+      public bool ContainerItemsRemoveAll { get; set; }
     }
 
     public static int Main(string[] args) {
@@ -134,16 +138,9 @@ namespace WouayNote.UModeCopyPasteCleaner {
         return 1;
       }
       Console.Out.WriteLine("done.");
-      JToken? majorVersion = data.SelectToken("protocol.version.Major", false);
-      if (majorVersion == null) {
-        Console.Out.WriteLine("Operation aborted as input file is not a copied base.");
-        return 1;
-      }
-      if (majorVersion.Value<int>() != SupportedJsonDataMajor) {
-        Console.Out.WriteLine("Operation aborted as input file major version is not supported.");
-        Console.Out.WriteLine("Expected major is '" + SupportedJsonDataMajor + "' whereas current major is " + majorVersion.ToString() + ".");
-        return 1;
-      }
+      //display input version
+      JToken? inputVersion = data.SelectToken("protocol.version", false);
+      Console.Out.WriteLine("Input file has no version: " + (inputVersion == null ? "tag not found" : inputVersion.ToString()) + ".");
       //count entities per owner
       Console.Out.WriteLine("\n[Owners]");
       Dictionary<long, int> countPerOwners = GetPrefabsCountPerOwnerId(data);
@@ -203,6 +200,21 @@ namespace WouayNote.UModeCopyPasteCleaner {
                 switchOffPrefabs = new string[] {
                   "assets/prefabs/deployable/playerioents/industrialconveyor/industrialconveyor.deployed.prefab",
                   "assets/prefabs/voiceaudio/boombox/boombox.deployed.prefab"
+                }.ToList(),
+                removeItemsFromPrefabs = new string[] {
+                }.ToList()
+              },
+              new() {
+                filterId = "raidable-base-clean",
+                removePrefabs = new string[] {
+                  "assets/bundled/prefabs/autospawn/resource/*"
+                }.ToList(),
+                switchOffPrefabs = new string[] {
+                }.ToList(),
+                removeItemsFromPrefabs = new string[] {
+                  "assets/prefabs/deployable/single shot trap/guntrap.deployed.prefab",
+                  "assets/prefabs/npc/autoturret/autoturret_deployed.prefab",
+                  "assets/prefabs/npc/flame turret/flameturret.deployed.prefab"
                 }.ToList()
               }
             }
@@ -353,17 +365,9 @@ namespace WouayNote.UModeCopyPasteCleaner {
         return 1;
       }
       Console.Out.WriteLine("done.");
-      //check major revision of input
-      JToken? majorVersion = data.SelectToken("protocol.version.Major", false);
-      if (majorVersion == null) {
-        Console.Out.WriteLine("Operation aborted as input file is not a copied base.");
-        return 1;
-      }
-      if (majorVersion.Value<int>() != SupportedJsonDataMajor) {
-        Console.Out.WriteLine("Operation aborted as input file major version is not supported.");
-        Console.Out.WriteLine("Expected major is '" + SupportedJsonDataMajor + "' whereas current major is " + majorVersion.ToString() + ".");
-        return 1;
-      }
+      //display input version
+      JToken? inputVersion = data.SelectToken("protocol.version", false);
+      Console.Out.WriteLine("Input file has no version: " + (inputVersion == null ? "tag not found" : inputVersion.ToString()) + ".");
       //filter nodes
       Settings.Filter filter = settings.filters.Where(filter => filter.filterId.Equals(arguments.FilterId)).First();
       if (filter != null) {
@@ -379,16 +383,15 @@ namespace WouayNote.UModeCopyPasteCleaner {
           data["entities"]?.Where(e => PrefabMatchWith(e.Value<string>("prefabname"), filter.switchOffPrefabs)).Select(e => e.SelectToken("flags.On", false)).Where(v => v != null && v.Value<bool>()).ToList().ForEach(v => v?.Parent?.Remove());
           Console.Out.WriteLine("done.");
         }
-      }
-      //fix prefabs without owner
-      if (arguments.OwnerId == 0) {
-        Console.Out.Write("Start assigning the biggest builder to entities without owner... ");
-        long defaultOwnerId = GetPrefabsCountPerOwnerId(data).OrderBy(p => p.Value).Last().Key;
-        data["entities"]?.Where(e => e["ownerid"] != null && e.Value<long>("ownerid") == 0).ToList().ForEach(e => e["ownerid"] = defaultOwnerId);
-        Console.Out.WriteLine("done.");
+        //clean container prefabs
+        if (filter.removeItemsFromPrefabs.Any()) {
+          Console.Out.Write("Start removing items from prefabs entities... ");
+          data["entities"]?.Where(e => PrefabMatchWith(e.Value<string>("prefabname"), filter.removeItemsFromPrefabs)).Select(e => e.SelectToken("items", false)).ToList().ForEach(items => items?.Children().ToList().ForEach(item => item?.Remove()));
+          Console.Out.WriteLine("done.");
+        }
       }
       //assign ownership
-      else {
+      if (arguments.OwnerId != 0) {
         Console.Out.Write("Start assigning ownership to entities... ");
         data["entities"]?.Where(e => e["ownerid"] != null).ToList().ForEach(e => e["ownerid"] = arguments.OwnerId);
         Console.Out.WriteLine("done.");

@@ -145,12 +145,19 @@
             "items": {
               "type": "string"
             }
+          },
+          "removed-items-from-prefabs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
           "filter-id",
           "removed-prefabs",
-          "switchedoff-prefabs"
+          "switchedoff-prefabs",
+          "removed-items-from-prefabs"
         ]
       }
     }

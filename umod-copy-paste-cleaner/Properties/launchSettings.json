@@ -39,6 +39,11 @@
       "commandName": "Project",
       "commandLineArgs": "do-clean --input inputs --output outputs --filter-id default-clean --overwrite --owner-id 9999 --lock-code 9999",
       "workingDirectory": "$(SolutionDir)\\test-data"
+    },
+    "Create Space data files (overwrite)": {
+      "commandName": "Project",
+      "commandLineArgs": "do-space --input inputs\\base-big-v2.json --output outputs --overwrite",
+      "workingDirectory": "$(SolutionDir)\\test-data"
     }
   }
 }

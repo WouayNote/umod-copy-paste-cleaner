@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Resources;
 using System.Text.RegularExpressions;
 
 namespace WouayNote.UModeCopyPasteCleaner {
@@ -18,6 +19,62 @@ namespace WouayNote.UModeCopyPasteCleaner {
     private const string JsonSchemaResourceName = "settings-schema-v1";
     private static readonly string ThisAppFilePath = Path.GetFullPath(Environment.ProcessPath);
     private static readonly string SettingsFilePath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(ThisAppFilePath) + ".\\", Path.GetFileNameWithoutExtension(ThisAppFilePath) + ".json"));
+    private static readonly Dictionary<string, int> DoorCardPrefabs = new() {
+      { "assets/bundled/prefabs/static/door.hinged.security.green.prefab", 0 },
+      { "assets/bundled/prefabs/static/door.hinged.security.blue.prefab", 1 },
+      { "assets/bundled/prefabs/static/door.hinged.security.red.prefab", 2 }
+    };
+    private static readonly string[] StandardDoorsPrefabs = {
+      "assets/prefabs/building/door.hinged/door.hinged.wood.prefab",
+      "assets/prefabs/building/door.hinged/door.hinged.metal.prefab",
+      "assets/prefabs/building/door.hinged/door.hinged.toptier.prefab",
+      "assets/prefabs/building/door.double.hinged/door.double.hinged.wood.prefab",
+      "assets/prefabs/building/door.double.hinged/door.double.hinged.metal.prefab",
+      "assets/prefabs/building/door.double.hinged/door.double.hinged.toptier.prefab",
+      "assets/prefabs/building/wall.frame.garagedoor/wall.frame.garagedoor.prefab"
+    };
+    private static readonly string[] CratePrefabs = {
+      "assets/prefabs/deployable/locker/locker.deployed.prefab",
+      "assets/prefabs/deployable/fridge/fridge.deployed.prefab",
+      "assets/prefabs/deployable/chinooklockedcrate/codelockedhackablecrate.prefab",
+      "assets/prefabs/deployable/chinooklockedcrate/codelockedhackablecrate_oilrig.prefab",
+      "assets/prefabs/misc/supply drop/supply_drop.prefab",
+      "assets/prefabs/npc/patrol helicopter/heli_crate.prefab",
+      "assets/prefabs/npc/m2bradley/bradley_crate.prefab",
+      "assets/bundled/prefabs/radtown/crate_basic.prefab",
+      "assets/bundled/prefabs/radtown/crate_elite.prefab",
+      "assets/bundled/prefabs/radtown/crate_mine.prefab",
+      "assets/bundled/prefabs/radtown/crate_normal.prefab",
+      "assets/bundled/prefabs/radtown/crate_normal_2.prefab",
+      "assets/bundled/prefabs/radtown/crate_normal_2_food.prefab",
+      "assets/bundled/prefabs/radtown/crate_normal_2_medical.prefab",
+      "assets/bundled/prefabs/radtown/crate_tools.prefab",
+      "assets/bundled/prefabs/radtown/crate_underwater_advanced.prefab",
+      "assets/bundled/prefabs/radtown/crate_underwater_basic.prefab",
+      "assets/bundled/prefabs/radtown/dmloot/dm ammo.prefab",
+      "assets/bundled/prefabs/radtown/dmloot/dm c4.prefab",
+      "assets/bundled/prefabs/radtown/dmloot/dm construction resources.prefab",
+      "assets/bundled/prefabs/radtown/dmloot/dm construction tools.prefab",
+      "assets/bundled/prefabs/radtown/dmloot/dm food.prefab",
+      "assets/bundled/prefabs/radtown/dmloot/dm medical.prefab",
+      "assets/bundled/prefabs/radtown/dmloot/dm res.prefab",
+      "assets/bundled/prefabs/radtown/dmloot/dm tier1 lootbox.prefab",
+      "assets/bundled/prefabs/radtown/dmloot/dm tier2 lootbox.prefab",
+      "assets/bundled/prefabs/radtown/dmloot/dm tier3 lootbox.prefab",
+      "assets/bundled/prefabs/radtown/foodbox.prefab",
+      "assets/bundled/prefabs/radtown/underwater_labs/crate_ammunition.prefab",
+      "assets/bundled/prefabs/radtown/underwater_labs/crate_elite.prefab",
+      "assets/bundled/prefabs/radtown/underwater_labs/crate_food_1.prefab",
+      "assets/bundled/prefabs/radtown/underwater_labs/crate_food_2.prefab",
+      "assets/bundled/prefabs/radtown/underwater_labs/crate_fuel.prefab",
+      "assets/bundled/prefabs/radtown/underwater_labs/crate_medical.prefab",
+      "assets/bundled/prefabs/radtown/underwater_labs/crate_normal.prefab",
+      "assets/bundled/prefabs/radtown/underwater_labs/crate_normal_2.prefab",
+      "assets/bundled/prefabs/radtown/underwater_labs/crate_tools.prefab",
+      "assets/bundled/prefabs/radtown/underwater_labs/tech_parts_1.prefab",
+      "assets/bundled/prefabs/radtown/underwater_labs/tech_parts_2.prefab",
+      "assets/bundled/prefabs/radtown/underwater_labs/vehicle_parts.prefab"
+    };
 
     public class Settings {
       [JsonProperty(PropertyName="version")]
@@ -109,12 +166,37 @@ namespace WouayNote.UModeCopyPasteCleaner {
       public bool ContainerItemsRemoveAll { get; set; }
     }
 
+    [Verb("do-space", HelpText = "Transform a copied base into Space data files.")]
+    public class ArgumentsSpaceFile {
+
+      [Usage]
+      public static IEnumerable<Example> Examples {
+        get {
+          return new List<Example>() {
+            new Example("Transform a copied base into Space data files", new ArgumentsSpaceFile { InputPath = "c:\\copied-base-file.json", OutputPath = "c:\\space-base-file.json" }),
+          };
+        }
+      }
+
+      public const string InputOption = "input";
+      [Option(InputOption, Required = true, HelpText = "The file that aims to be transformed.")]
+      public string? InputPath { get; set; }
+
+      public const string OutputOption = "output";
+      [Option(OutputOption, Required = true, HelpText = "The directory to be writen with transformed data.")]
+      public string? OutputPath { get; set; }
+
+      [Option("overwrite", Required = false, HelpText = "Optional. When set, overwrite the output file if already exists.")]
+      public bool Overwrite { get; set; }
+    }
+
     public static int Main(string[] args) {
       //parsing command line arguments
-      return Parser.Default.ParseArguments<ArgumentsGetInfo, ArgumentsInitSettings, ArgumentsCleanFile>(args).MapResult(
+      return Parser.Default.ParseArguments<ArgumentsGetInfo, ArgumentsInitSettings, ArgumentsCleanFile, ArgumentsSpaceFile>(args).MapResult(
         (ArgumentsGetInfo arguments) => ProcessInfo(arguments),
         (ArgumentsInitSettings arguments) => ProcessInstall(arguments),
         (ArgumentsCleanFile arguments) => ProcessClean(arguments),
+        (ArgumentsSpaceFile arguments) => ProcessSpace(arguments),
         errors => 1
       );
     }
@@ -413,14 +495,167 @@ namespace WouayNote.UModeCopyPasteCleaner {
         data.SelectTokens("entities[*].lock", false).ToList().ForEach(l => l.Parent?.Remove());
         Console.Out.WriteLine("done.");
       }
+      //write data to file
+      return WriteJsonData(data, arguments.OutputPath);
+    }
+
+    private static int ProcessSpace(ArgumentsSpaceFile arguments) {
+      Console.Out.WriteLine();
+      //check input file exists
+      arguments.InputPath = arguments.InputPath == null ? "" : Path.GetFullPath(arguments.InputPath);
+      if (!File.Exists(arguments.InputPath)) {
+        Console.Out.WriteLine("Operation aborted as input file can not be found: '" + arguments.InputPath + "'.");
+        return 1;
+      }
+      //check output file does not exist if no force option
+      string prefabPath = Path.Combine(arguments.OutputPath == null ? "" : Path.GetFullPath(arguments.OutputPath), Path.GetFileName(arguments.InputPath));
+      if (!arguments.Overwrite && File.Exists(prefabPath)) {
+        Console.Out.WriteLine("Operation aborted as output file already exists: '" + prefabPath + "'.");
+        return 1;
+      }
+      string configPath = Path.Combine(arguments.OutputPath == null ? "" : Path.GetFullPath(arguments.OutputPath), Path.GetFileNameWithoutExtension(arguments.InputPath) + "_config.json");
+      if (!arguments.Overwrite && File.Exists(configPath)) {
+        Console.Out.WriteLine("Operation aborted as output file already exists: '" + configPath + "'.");
+        return 1;
+      }
+      //read data from input file
+      Console.Out.Write("Start loading '" + arguments.InputPath + "'... ");
+      JObject inputData;
+      try {
+        inputData = JObject.Parse(File.ReadAllText(arguments.InputPath));
+      }
+      catch (Exception ex) {
+        Console.Out.WriteLine("failed.");
+        Console.Out.WriteLine("Not a valid json file. " + ex.Message);
+        return 1;
+      }
+      Console.Out.WriteLine("done.");
+      //create output data
+      JArray prefabData = new();
+      JArray autoTurretData = new();
+      JArray flameTurretData = new();
+      JArray bradleyData = new();
+      JArray crateData = new();
+      JObject configData = new() {
+        new JProperty("Turret Settings", autoTurretData),
+        new JProperty("Flame Turret Settings", flameTurretData),
+        new JProperty("Bradley Settings", bradleyData),
+        new JProperty("Crate locations", crateData),
+        new JProperty("Settings for Card Doors and NPCs", new JArray()),
+        new JProperty("Setting up NPCs and basic Doors", new JArray()),
+        new JProperty("Settings for Static NPC that appear when the station spawns (Preset name - positions)", new JArray()),
+      };
+      foreach (JObject prefab in inputData["entities"]?.Children<JObject>() ?? JEnumerable<JObject>.Empty) {
+        string? prefabName = prefab["prefabname"]?.Value<string>();
+        //autoturrets
+        if (prefabName == "assets/prefabs/npc/autoturret/autoturret_deployed.prefab") {
+          autoTurretData.Add(new JObject() {
+            new JProperty("Weapon Short Name", "smg.2"),
+            new JProperty("Hit Points", 100.0),
+            new JProperty("Ammo Short Name", "ammo.pistol"),
+            new JProperty("Ammo Amount", 100),
+            new JProperty("Locations", new JArray() { new JObject() {
+              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()}, {prefab["pos"]?["y"]?.Value<string>()}, {prefab["pos"]?["z"]?.Value<string>()})"),
+              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()}, {prefab["rot"]?["y"]?.Value<string>()}, {prefab["rot"]?["z"]?.Value<string>()})"),
+            }})
+          });
+        }
+        //flame turrets
+        else if (prefabName == "assets/prefabs/npc/flame turret/flameturret.deployed.prefab") {
+          autoTurretData.Add(new JObject() {
+            new JProperty("Hit Points", 100.0),
+            new JProperty("Fuel", 75),
+            new JProperty("Locations", new JArray() { new JObject() {
+              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()}, {prefab["pos"]?["y"]?.Value<string>()}, {prefab["pos"]?["z"]?.Value<string>()})"),
+              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()}, {prefab["rot"]?["y"]?.Value<string>()}, {prefab["rot"]?["z"]?.Value<string>()})"),
+            }})
+          });
+        }
+        //bradleys
+        else if (prefabName == "assets/prefabs/npc/m2bradley/bradleyapc.prefab") {
+          autoTurretData.Add(new JObject() {
+            new JProperty("Hit Points", 300.0),
+            new JProperty("Damage Scale", 0.3),
+            new JProperty("Viewable Distance", 100.0),
+            new JProperty("The multiplier of Machine-gun aim cone", 1.1),
+            new JProperty("The multiplier of Machine-gun fire rate", 1.0),
+            new JProperty("Amount of Machine-gun burst shots", 10),
+            new JProperty("The time between shots of the main gun [sec.]", 10.0),
+            new JProperty("The time between shots of the main gun in a fire rate [sec.]", 0.25),
+            new JProperty("Locations", new JArray() { new JObject() {
+              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()}, {prefab["pos"]?["y"]?.Value<string>()}, {prefab["pos"]?["z"]?.Value<string>()})"),
+              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()}, {prefab["rot"]?["y"]?.Value<string>()}, {prefab["rot"]?["z"]?.Value<string>()})"),
+            }})
+          });
+        }
+        //crates
+        else if (CratePrefabs.Contains(prefabName)) {
+          autoTurretData.Add(new JObject() {
+            new JProperty("Prefab", prefabName),
+            new JProperty("Locations", new JArray() { new JObject() {
+              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()}, {prefab["pos"]?["y"]?.Value<string>()}, {prefab["pos"]?["z"]?.Value<string>()})"),
+              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()}, {prefab["rot"]?["y"]?.Value<string>()}, {prefab["rot"]?["z"]?.Value<string>()})"),
+            }})
+          });
+        }
+        //card doors
+        else if (DoorCardPrefabs.Keys.Contains(prefabName)) {
+          autoTurretData.Add(new JObject() {
+            new JProperty("Door prefab", prefabName),
+            new JProperty("Card type (0 - green, 1 - blue, 2 - red, 3 - space card)", DoorCardPrefabs[prefabName ?? ""]),
+            new JProperty("Door location", new JArray() { new JObject() {
+              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()}, {prefab["pos"]?["y"]?.Value<string>()}, {prefab["pos"]?["z"]?.Value<string>()})"),
+              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()}, {prefab["rot"]?["y"]?.Value<string>()}, {prefab["rot"]?["z"]?.Value<string>()})"),
+            }}),
+            new JProperty("Card reader location", new JArray() { new JObject() {
+              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()}, {prefab["pos"]?["y"]?.Value<string>()}, {prefab["pos"]?["z"]?.Value<string>()})"),
+              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()}, {prefab["rot"]?["y"]?.Value<string>()}, {prefab["rot"]?["z"]?.Value<string>()})"),
+            }}),
+            new JProperty("Button location", new JArray() { new JObject() {
+              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()}, {prefab["pos"]?["y"]?.Value<string>()}, {prefab["pos"]?["z"]?.Value<string>()})"),
+              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()}, {prefab["rot"]?["y"]?.Value<string>()}, {prefab["rot"]?["z"]?.Value<string>()})"),
+            }}),
+            new JProperty("Settings for Static NPCs that appear when a door is opened (Preset name - positions)", new JObject() {
+            })
+          });
+        }
+        //standard doors
+        else if (StandardDoorsPrefabs.Contains(prefabName)) {
+          autoTurretData.Add(new JObject() {
+            new JProperty("Prefab", prefabName),
+            new JProperty("Lock the Door ? (Force Door Raiding)", true),
+            new JProperty("Door locations", new JArray() { new JObject() {
+              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()}, {prefab["pos"]?["y"]?.Value<string>()}, {prefab["pos"]?["z"]?.Value<string>()})"),
+              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()}, {prefab["rot"]?["y"]?.Value<string>()}, {prefab["rot"]?["z"]?.Value<string>()})"),
+            }}),
+            new JProperty("Settings for Static NPCs that appear when a door is opened (Preset name - positions)", new JObject() {
+            })
+          });
+        }
+        //others
+        else if (prefabName != null) {
+          prefabData.Add(new JObject(
+            new JProperty("prefab", prefabName),
+            new JProperty("pos", $"({prefab["pos"]?["x"]?.Value<string>()}, {prefab["pos"]?["y"]?.Value<string>()}, {prefab["pos"]?["z"]?.Value<string>()})"),
+            new JProperty("rot", $"({prefab["rot"]?["x"]?.Value<string>()}, {prefab["rot"]?["y"]?.Value<string>()}, {prefab["rot"]?["z"]?.Value<string>()})"),
+            new JProperty("skin", prefab["skinid"]?.Value<long>())
+          ));
+        }
+      }
+      //write data to file
+      if (WriteJsonData(configData, configPath) != 0) return 1;
+      return WriteJsonData(prefabData, prefabPath);
+    }
+
+    private static int WriteJsonData(JToken outputData, string filePath) {
       //write data to temp file
       string tempFilePath = Path.GetTempFileName();
       Console.Out.Write("Start writing to temporary file '" + tempFilePath + "'... ");
       try {
         using (StreamWriter streamWriter = File.CreateText(tempFilePath))
-        using (JsonTextWriter jsonWriter = new (streamWriter)) {
+        using (JsonTextWriter jsonWriter = new(streamWriter)) {
           jsonWriter.Formatting = Formatting.Indented;
-          data.WriteTo(jsonWriter);
+          outputData.WriteTo(jsonWriter);
         }
       }
       catch (Exception ex) {
@@ -430,10 +665,10 @@ namespace WouayNote.UModeCopyPasteCleaner {
       }
       Console.Out.WriteLine("done.");
       //move temp file to output file
-      if (File.Exists(arguments.OutputPath)) {
-        Console.Out.Write("Start deleting old output file '" + arguments.OutputPath + "'... ");
+      if (File.Exists(filePath)) {
+        Console.Out.Write("Start deleting old output file '" + filePath + "'... ");
         try {
-          File.Delete(arguments.OutputPath);
+          File.Delete(filePath);
         }
         catch (Exception ex) {
           Console.Out.WriteLine("failed.");
@@ -442,9 +677,9 @@ namespace WouayNote.UModeCopyPasteCleaner {
         }
         Console.Out.WriteLine("done.");
       }
-      Console.Out.Write("Start moving temporary file to '" + arguments.OutputPath + "'... ");
+      Console.Out.Write("Start moving temporary file to '" + filePath + "'... ");
       try {
-        File.Move(tempFilePath, arguments.OutputPath);
+        File.Move(tempFilePath, filePath);
       }
       catch (Exception ex) {
         Console.Out.WriteLine("failed.");

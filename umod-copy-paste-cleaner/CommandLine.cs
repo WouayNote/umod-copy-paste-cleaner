@@ -555,8 +555,8 @@ namespace WouayNote.UModeCopyPasteCleaner {
             new JProperty("Ammo Short Name", "ammo.pistol"),
             new JProperty("Ammo Amount", 100),
             new JProperty("Locations", new JArray() { new JObject() {
-              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()}, {prefab["pos"]?["y"]?.Value<string>()}, {prefab["pos"]?["z"]?.Value<string>()})"),
-              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()}, {prefab["rot"]?["y"]?.Value<string>()}, {prefab["rot"]?["z"]?.Value<string>()})"),
+              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()??"0.0"}, {prefab["pos"]?["y"]?.Value<string>()??"0.0"}, {prefab["pos"]?["z"]?.Value<string>()??"0.0"})"),
+              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()??"0.0"}, {prefab["rot"]?["y"]?.Value<string>()??"0.0"}, {prefab["rot"]?["z"]?.Value<string>()??"0.0"})")
             }})
           });
         }
@@ -566,8 +566,8 @@ namespace WouayNote.UModeCopyPasteCleaner {
             new JProperty("Hit Points", 100.0),
             new JProperty("Fuel", 75),
             new JProperty("Locations", new JArray() { new JObject() {
-              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()}, {prefab["pos"]?["y"]?.Value<string>()}, {prefab["pos"]?["z"]?.Value<string>()})"),
-              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()}, {prefab["rot"]?["y"]?.Value<string>()}, {prefab["rot"]?["z"]?.Value<string>()})"),
+              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()??"0.0"}, {prefab["pos"]?["y"]?.Value<string>()??"0.0"}, {prefab["pos"]?["z"]?.Value<string>()??"0.0"})"),
+              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()??"0.0"}, {prefab["rot"]?["y"]?.Value<string>()??"0.0"}, {prefab["rot"]?["z"]?.Value<string>()??"0.0"})")
             }})
           });
         }
@@ -583,8 +583,8 @@ namespace WouayNote.UModeCopyPasteCleaner {
             new JProperty("The time between shots of the main gun [sec.]", 10.0),
             new JProperty("The time between shots of the main gun in a fire rate [sec.]", 0.25),
             new JProperty("Locations", new JArray() { new JObject() {
-              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()}, {prefab["pos"]?["y"]?.Value<string>()}, {prefab["pos"]?["z"]?.Value<string>()})"),
-              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()}, {prefab["rot"]?["y"]?.Value<string>()}, {prefab["rot"]?["z"]?.Value<string>()})"),
+              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()??"0.0"}, {prefab["pos"]?["y"]?.Value<string>()??"0.0"}, {prefab["pos"]?["z"]?.Value<string>()??"0.0"})"),
+              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()??"0.0"}, {prefab["rot"]?["y"]?.Value<string>()??"0.0"}, {prefab["rot"]?["z"]?.Value<string>()??"0.0"})")
             }})
           });
         }
@@ -593,8 +593,8 @@ namespace WouayNote.UModeCopyPasteCleaner {
           autoTurretData.Add(new JObject() {
             new JProperty("Prefab", prefabName),
             new JProperty("Locations", new JArray() { new JObject() {
-              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()}, {prefab["pos"]?["y"]?.Value<string>()}, {prefab["pos"]?["z"]?.Value<string>()})"),
-              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()}, {prefab["rot"]?["y"]?.Value<string>()}, {prefab["rot"]?["z"]?.Value<string>()})"),
+              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()??"0.0"}, {prefab["pos"]?["y"]?.Value<string>()??"0.0"}, {prefab["pos"]?["z"]?.Value<string>()??"0.0"})"),
+              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()??"0.0"}, {prefab["rot"]?["y"]?.Value<string>()??"0.0"}, {prefab["rot"]?["z"]?.Value<string>()??"0.0"})")
             }})
           });
         }
@@ -604,16 +604,17 @@ namespace WouayNote.UModeCopyPasteCleaner {
             new JProperty("Door prefab", prefabName),
             new JProperty("Card type (0 - green, 1 - blue, 2 - red, 3 - space card)", DoorCardPrefabs[prefabName ?? ""]),
             new JProperty("Door location", new JArray() { new JObject() {
-              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()}, {prefab["pos"]?["y"]?.Value<string>()}, {prefab["pos"]?["z"]?.Value<string>()})"),
-              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()}, {prefab["rot"]?["y"]?.Value<string>()}, {prefab["rot"]?["z"]?.Value<string>()})"),
+              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()??"0.0"}, {prefab["pos"]?["y"]?.Value<string>()??"0.0"}, {prefab["pos"]?["z"]?.Value<string>()??"0.0"})"),
+              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()??"0.0"}, {prefab["rot"]?["y"]?.Value<string>()??"0.0"}, {prefab["rot"]?["z"]?.Value<string>()??"0.0"})"),
+              new JProperty("SkinID", prefab["skinid"]?.Value<long>()??0)
             }}),
             new JProperty("Card reader location", new JArray() { new JObject() {
-              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()}, {prefab["pos"]?["y"]?.Value<string>()}, {prefab["pos"]?["z"]?.Value<string>()})"),
-              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()}, {prefab["rot"]?["y"]?.Value<string>()}, {prefab["rot"]?["z"]?.Value<string>()})"),
+              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()??"0.0"}, {prefab["pos"]?["y"]?.Value<string>()??"0.0"}, {prefab["pos"]?["z"]?.Value<string>()??"0.0"})"),
+              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()??"0.0"}, {prefab["rot"]?["y"]?.Value<string>()??"0.0"}, {prefab["rot"]?["z"]?.Value<string>()??"0.0"})")
             }}),
             new JProperty("Button location", new JArray() { new JObject() {
-              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()}, {prefab["pos"]?["y"]?.Value<string>()}, {prefab["pos"]?["z"]?.Value<string>()})"),
-              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()}, {prefab["rot"]?["y"]?.Value<string>()}, {prefab["rot"]?["z"]?.Value<string>()})"),
+              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()??"0.0"}, {prefab["pos"]?["y"]?.Value<string>()??"0.0"}, {prefab["pos"]?["z"]?.Value<string>()??"0.0"})"),
+              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()??"0.0"}, {prefab["rot"]?["y"]?.Value<string>()??"0.0"}, {prefab["rot"]?["z"]?.Value<string>()??"0.0"})")
             }}),
             new JProperty("Settings for Static NPCs that appear when a door is opened (Preset name - positions)", new JObject() {
             })
@@ -625,8 +626,9 @@ namespace WouayNote.UModeCopyPasteCleaner {
             new JProperty("Prefab", prefabName),
             new JProperty("Lock the Door ? (Force Door Raiding)", true),
             new JProperty("Door locations", new JArray() { new JObject() {
-              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()}, {prefab["pos"]?["y"]?.Value<string>()}, {prefab["pos"]?["z"]?.Value<string>()})"),
-              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()}, {prefab["rot"]?["y"]?.Value<string>()}, {prefab["rot"]?["z"]?.Value<string>()})"),
+              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()??"0.0"}, {prefab["pos"]?["y"]?.Value<string>()??"0.0"}, {prefab["pos"]?["z"]?.Value<string>()??"0.0"})"),
+              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()??"0.0"}, {prefab["rot"]?["y"]?.Value<string>()??"0.0"}, {prefab["rot"]?["z"]?.Value<string>()??"0.0"})"),
+              new JProperty("SkinID", prefab["skinid"]?.Value<long>()??0)
             }}),
             new JProperty("Settings for Static NPCs that appear when a door is opened (Preset name - positions)", new JObject() {
             })
@@ -636,9 +638,9 @@ namespace WouayNote.UModeCopyPasteCleaner {
         else if (prefabName != null) {
           prefabData.Add(new JObject(
             new JProperty("prefab", prefabName),
-            new JProperty("pos", $"({prefab["pos"]?["x"]?.Value<string>()}, {prefab["pos"]?["y"]?.Value<string>()}, {prefab["pos"]?["z"]?.Value<string>()})"),
-            new JProperty("rot", $"({prefab["rot"]?["x"]?.Value<string>()}, {prefab["rot"]?["y"]?.Value<string>()}, {prefab["rot"]?["z"]?.Value<string>()})"),
-            new JProperty("skin", prefab["skinid"]?.Value<long>())
+            new JProperty("pos", $"({prefab["pos"]?["x"]?.Value<string>()??"0.0"}, {prefab["pos"]?["y"]?.Value<string>()??"0.0"}, {prefab["pos"]?["z"]?.Value<string>()??"0.0"})"),
+            new JProperty("rot", $"({prefab["rot"]?["x"]?.Value<string>()??"0.0"}, {prefab["rot"]?["y"]?.Value<string>()??"0.0"}, {prefab["rot"]?["z"]?.Value<string>()??"0.0"})"),
+            new JProperty("skin", prefab["skinid"]?.Value<long>()??0)
           ));
         }
       }

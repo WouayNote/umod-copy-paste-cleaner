@@ -19,12 +19,12 @@ namespace WouayNote.UModeCopyPasteCleaner {
     private const string JsonSchemaResourceName = "settings-schema-v1";
     private static readonly string ThisAppFilePath = Path.GetFullPath(Environment.ProcessPath ?? "");
     private static readonly string SettingsFilePath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(ThisAppFilePath) + ".\\", Path.GetFileNameWithoutExtension(ThisAppFilePath) + ".json"));
-    private static readonly Dictionary<string, int> DoorCardPrefabs = new() {
+    private static readonly Dictionary<string, int> CardDoorPrefabs = new() {
       { "assets/bundled/prefabs/static/door.hinged.security.green.prefab", 0 },
       { "assets/bundled/prefabs/static/door.hinged.security.blue.prefab", 1 },
       { "assets/bundled/prefabs/static/door.hinged.security.red.prefab", 2 }
     };
-    private static readonly string[] StandardDoorsPrefabs = {
+    private static readonly string[] BasicDoorPrefabs = {
       "assets/prefabs/building/door.hinged/door.hinged.wood.prefab",
       "assets/prefabs/building/door.hinged/door.hinged.metal.prefab",
       "assets/prefabs/building/door.hinged/door.hinged.toptier.prefab",
@@ -592,14 +592,17 @@ namespace WouayNote.UModeCopyPasteCleaner {
       JArray flameTurretData = new();
       JArray bradleyData = new();
       JArray crateData = new();
+      JArray cardDoorsData = new();
+      JArray basicDoorsData = new();
+      JArray staticNpcsData = new();
       JObject configData = new() {
         new JProperty("Turret Settings", autoTurretData),
         new JProperty("Flame Turret Settings", flameTurretData),
         new JProperty("Bradley Settings", bradleyData),
         new JProperty("Crate locations", crateData),
-        new JProperty("Settings for Card Doors and NPCs", new JArray()),
-        new JProperty("Setting up NPCs and basic Doors", new JArray()),
-        new JProperty("Settings for Static NPC that appear when the station spawns (Preset name - positions)", new JArray()),
+        new JProperty("Settings for Card Doors and NPCs", cardDoorsData),
+        new JProperty("Setting up NPCs and basic Doors", basicDoorsData),
+        new JProperty("Settings for Static NPC that appear when the station spawns (Preset name - positions)", new JObject("guard_tie", staticNpcsData)),
       };
       foreach (JObject prefab in inputData["entities"]?.Children<JObject>() ?? JEnumerable<JObject>.Empty) {
         string? prefabName = prefab["prefabname"]?.Value<string>();
@@ -611,25 +614,25 @@ namespace WouayNote.UModeCopyPasteCleaner {
             new JProperty("Ammo Short Name", "ammo.pistol"),
             new JProperty("Ammo Amount", 100),
             new JProperty("Locations", new JArray() { new JObject() {
-              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()}, {prefab["pos"]?["y"]?.Value<string>()}, {prefab["pos"]?["z"]?.Value<string>()})"),
-              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()}, {prefab["rot"]?["y"]?.Value<string>()}, {prefab["rot"]?["z"]?.Value<string>()})"),
+              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()??"0.0"}, {prefab["pos"]?["y"]?.Value<string>()??"0.0"}, {prefab["pos"]?["z"]?.Value<string>()??"0.0"})"),
+              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()??"0.0"}, {prefab["rot"]?["y"]?.Value<string>()??"0.0"}, {prefab["rot"]?["z"]?.Value<string>()??"0.0"})")
             }})
           });
         }
         //flame turrets
         else if (prefabName == "assets/prefabs/npc/flame turret/flameturret.deployed.prefab") {
-          autoTurretData.Add(new JObject() {
+          flameTurretData.Add(new JObject() {
             new JProperty("Hit Points", 100.0),
             new JProperty("Fuel", 75),
             new JProperty("Locations", new JArray() { new JObject() {
-              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()}, {prefab["pos"]?["y"]?.Value<string>()}, {prefab["pos"]?["z"]?.Value<string>()})"),
-              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()}, {prefab["rot"]?["y"]?.Value<string>()}, {prefab["rot"]?["z"]?.Value<string>()})"),
+              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()??"0.0"}, {prefab["pos"]?["y"]?.Value<string>()??"0.0"}, {prefab["pos"]?["z"]?.Value<string>()??"0.0"})"),
+              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()??"0.0"}, {prefab["rot"]?["y"]?.Value<string>()??"0.0"}, {prefab["rot"]?["z"]?.Value<string>()??"0.0"})")
             }})
           });
         }
         //bradleys
         else if (prefabName == "assets/prefabs/npc/m2bradley/bradleyapc.prefab") {
-          autoTurretData.Add(new JObject() {
+          bradleyData.Add(new JObject() {
             new JProperty("Hit Points", 300.0),
             new JProperty("Damage Scale", 0.3),
             new JProperty("Viewable Distance", 100.0),
@@ -639,62 +642,71 @@ namespace WouayNote.UModeCopyPasteCleaner {
             new JProperty("The time between shots of the main gun [sec.]", 10.0),
             new JProperty("The time between shots of the main gun in a fire rate [sec.]", 0.25),
             new JProperty("Locations", new JArray() { new JObject() {
-              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()}, {prefab["pos"]?["y"]?.Value<string>()}, {prefab["pos"]?["z"]?.Value<string>()})"),
-              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()}, {prefab["rot"]?["y"]?.Value<string>()}, {prefab["rot"]?["z"]?.Value<string>()})"),
+              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()??"0.0"}, {prefab["pos"]?["y"]?.Value<string>()??"0.0"}, {prefab["pos"]?["z"]?.Value<string>()??"0.0"})"),
+              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()??"0.0"}, {prefab["rot"]?["y"]?.Value<string>()??"0.0"}, {prefab["rot"]?["z"]?.Value<string>()??"0.0"})")
             }})
           });
         }
         //crates
         else if (CratePrefabs.Contains(prefabName)) {
-          autoTurretData.Add(new JObject() {
+          crateData.Add(new JObject() {
             new JProperty("Prefab", prefabName),
             new JProperty("Locations", new JArray() { new JObject() {
-              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()}, {prefab["pos"]?["y"]?.Value<string>()}, {prefab["pos"]?["z"]?.Value<string>()})"),
-              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()}, {prefab["rot"]?["y"]?.Value<string>()}, {prefab["rot"]?["z"]?.Value<string>()})"),
+              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()??"0.0"}, {prefab["pos"]?["y"]?.Value<string>()??"0.0"}, {prefab["pos"]?["z"]?.Value<string>()??"0.0"})"),
+              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()??"0.0"}, {prefab["rot"]?["y"]?.Value<string>()??"0.0"}, {prefab["rot"]?["z"]?.Value<string>()??"0.0"})")
             }})
           });
         }
         //card doors
-        else if (DoorCardPrefabs.Keys.Contains(prefabName)) {
-          autoTurretData.Add(new JObject() {
+        else if (CardDoorPrefabs.Keys.Contains(prefabName)) {
+          cardDoorsData.Add(new JObject() {
             new JProperty("Door prefab", prefabName),
-            new JProperty("Card type (0 - green, 1 - blue, 2 - red, 3 - space card)", DoorCardPrefabs[prefabName ?? ""]),
+            new JProperty("Card type (0 - green, 1 - blue, 2 - red, 3 - space card)", CardDoorPrefabs[prefabName ?? ""]),
             new JProperty("Door location", new JArray() { new JObject() {
-              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()}, {prefab["pos"]?["y"]?.Value<string>()}, {prefab["pos"]?["z"]?.Value<string>()})"),
-              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()}, {prefab["rot"]?["y"]?.Value<string>()}, {prefab["rot"]?["z"]?.Value<string>()})"),
+              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()??"0.0"}, {prefab["pos"]?["y"]?.Value<string>()??"0.0"}, {prefab["pos"]?["z"]?.Value<string>()??"0.0"})"),
+              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()??"0.0"}, {prefab["rot"]?["y"]?.Value<string>()??"0.0"}, {prefab["rot"]?["z"]?.Value<string>()??"0.0"})"),
+              new JProperty("SkinID", prefab["skinid"]?.Value<long>()??0)
             }}),
             new JProperty("Card reader location", new JArray() { new JObject() {
-              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()}, {prefab["pos"]?["y"]?.Value<string>()}, {prefab["pos"]?["z"]?.Value<string>()})"),
-              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()}, {prefab["rot"]?["y"]?.Value<string>()}, {prefab["rot"]?["z"]?.Value<string>()})"),
+              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()??"0.0"}, {prefab["pos"]?["y"]?.Value<string>()??"0.0"}, {prefab["pos"]?["z"]?.Value<string>()??"0.0"})"),
+              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()??"0.0"}, {prefab["rot"]?["y"]?.Value<string>()??"0.0"}, {prefab["rot"]?["z"]?.Value<string>()??"0.0"})")
             }}),
             new JProperty("Button location", new JArray() { new JObject() {
-              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()}, {prefab["pos"]?["y"]?.Value<string>()}, {prefab["pos"]?["z"]?.Value<string>()})"),
-              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()}, {prefab["rot"]?["y"]?.Value<string>()}, {prefab["rot"]?["z"]?.Value<string>()})"),
+              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()??"0.0"}, {prefab["pos"]?["y"]?.Value<string>()??"0.0"}, {prefab["pos"]?["z"]?.Value<string>()??"0.0"})"),
+              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()??"0.0"}, {prefab["rot"]?["y"]?.Value<string>()??"0.0"}, {prefab["rot"]?["z"]?.Value<string>()??"0.0"})")
             }}),
             new JProperty("Settings for Static NPCs that appear when a door is opened (Preset name - positions)", new JObject() {
             })
           });
         }
         //standard doors
-        else if (StandardDoorsPrefabs.Contains(prefabName)) {
-          autoTurretData.Add(new JObject() {
+        else if (BasicDoorPrefabs.Contains(prefabName)) {
+          basicDoorsData.Add(new JObject() {
             new JProperty("Prefab", prefabName),
             new JProperty("Lock the Door ? (Force Door Raiding)", true),
             new JProperty("Door locations", new JArray() { new JObject() {
-              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()}, {prefab["pos"]?["y"]?.Value<string>()}, {prefab["pos"]?["z"]?.Value<string>()})"),
-              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()}, {prefab["rot"]?["y"]?.Value<string>()}, {prefab["rot"]?["z"]?.Value<string>()})"),
+              new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()??"0.0"}, {prefab["pos"]?["y"]?.Value<string>()??"0.0"}, {prefab["pos"]?["z"]?.Value<string>()??"0.0"})"),
+              new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()??"0.0"}, {prefab["rot"]?["y"]?.Value<string>()??"0.0"}, {prefab["rot"]?["z"]?.Value<string>()??"0.0"})"),
+              new JProperty("SkinID", prefab["skinid"]?.Value<long>()??0)
             }}),
             new JProperty("Settings for Static NPCs that appear when a door is opened (Preset name - positions)", new JObject() {
             })
           });
         }
+        //pnjs
+        else if (prefabName == "assets/prefabs/misc/halloween/scarecrow/scarecrow.deployed.prefab") {
+          staticNpcsData.Add(new JObject(
+            new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()??"0.0"}, {prefab["pos"]?["y"]?.Value<string>()??"0.0"}, {prefab["pos"]?["z"]?.Value<string>()??"0.0"})"),
+            new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()??"0.0"}, {prefab["rot"]?["y"]?.Value<string>()??"0.0"}, {prefab["rot"]?["z"]?.Value<string>()??"0.0"})"),
+          ));
+        }
         //others
         else if (prefabName != null) {
           prefabData.Add(new JObject(
             new JProperty("prefab", prefabName),
-            new JProperty("pos", $"({prefab["pos"]?["x"]?.Value<string>()}, {prefab["pos"]?["y"]?.Value<string>()}, {prefab["pos"]?["z"]?.Value<string>()})"),
-            new JProperty("rot", $"({prefab["rot"]?["x"]?.Value<string>()}, {prefab["rot"]?["y"]?.Value<string>()}, {prefab["rot"]?["z"]?.Value<string>()})"),
-            new JProperty("skin", prefab["skinid"]?.Value<long>())
+            new JProperty("pos", $"({prefab["pos"]?["x"]?.Value<string>()??"0.0"}, {prefab["pos"]?["y"]?.Value<string>()??"0.0"}, {prefab["pos"]?["z"]?.Value<string>()??"0.0"})"),
+            new JProperty("rot", $"({prefab["rot"]?["x"]?.Value<string>()??"0.0"}, {prefab["rot"]?["y"]?.Value<string>()??"0.0"}, {prefab["rot"]?["z"]?.Value<string>()??"0.0"})"),
+            new JProperty("skin", prefab["skinid"]?.Value<long>()??0)
           ));
         }
       }

@@ -605,7 +605,7 @@ namespace WouayNote.UModeCopyPasteCleaner {
         new JProperty("Crate locations", crateData),
         new JProperty("Settings for Card Doors and NPCs", cardDoorsData),
         new JProperty("Setting up NPCs and basic Doors", basicDoorsData),
-        new JProperty("Settings for Static NPC that appear when the station spawns (Preset name - positions)", new JObject("guard_tie", staticNpcsData)),
+        new JProperty("Settings for Static NPC that appear when the station spawns (Preset name - positions)", new JObject("guard_xxx", staticNpcsData)),
       };
       foreach (JObject prefab in inputData["entities"]?.Children<JObject>() ?? JEnumerable<JObject>.Empty) {
         string? prefabName = prefab["prefabname"]?.Value<string>();
@@ -697,7 +697,7 @@ namespace WouayNote.UModeCopyPasteCleaner {
           });
         }
         //pnjs
-        else if (prefabName == "assets/prefabs/misc/halloween/scarecrow/scarecrow.deployed.prefab") {
+        else if (prefabName == "assets/prefabs/deployable/landmine/landmine.prefab") {
           staticNpcsData.Add(new JObject(
             new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()??"0.0"}, {prefab["pos"]?["y"]?.Value<string>()??"0.0"}, {prefab["pos"]?["z"]?.Value<string>()??"0.0"})"),
             new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()??"0.0"}, {prefab["rot"]?["y"]?.Value<string>()??"0.0"}, {prefab["rot"]?["z"]?.Value<string>()??"0.0"})")

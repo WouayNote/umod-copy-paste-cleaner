@@ -310,6 +310,7 @@ namespace WouayNote.UModeCopyPasteCleaner {
                   { "assets/prefabs/deployable/playerioents/lights/flasherlight/electric.flasherlight.deployed.prefab", new() { new("On", true), new("Reserved1", true), new("Reserved2", true), new("Reserved8", true) } },
                   { "assets/prefabs/deployable/playerioents/lights/simplelight.prefab", new() { new("On", true), new("Reserved8", true) } },
                   { "assets/prefabs/deployable/playerioents/lights/sirenlight/electric.sirenlight.deployed.prefab", new() { new("On", true), new("Reserved1", true), new("Reserved2", true), new("Reserved8", true) } },
+                  { "assets/prefabs/deployable/playerioents/teslacoil/teslacoil.deployed.prefab", new() { new("On", true), new("Reserved1", true), new("Reserved8", true) } },
                   { "assets/prefabs/deployable/search light/searchlight.deployed.prefab", new() { new("On", true), new("Reserved8", true) } },
                   { "assets/prefabs/deployable/tuna can wall lamp/tunalight.deployed.prefab", new() { new("On", true) } },
                   { "assets/prefabs/misc/chinesenewyear/chineselantern/chineselantern.deployed.prefab", new() { new("On", true) } },

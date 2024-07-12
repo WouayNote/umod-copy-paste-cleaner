@@ -15,8 +15,7 @@ namespace WouayNote.UModeCopyPasteCleaner {
 
   class CommandLine {
 
-    private const int SupportedJsonSettingsVersion = 2;
-    private const string JsonSchemaResourceName = "settings-schema-v1";
+    private const int SupportedJsonSettingsVersion = 3;
     private static readonly string ThisAppFilePath = Path.GetFullPath(Environment.ProcessPath ?? "");
     private static readonly string SettingsFilePath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(ThisAppFilePath) + ".\\", Path.GetFileNameWithoutExtension(ThisAppFilePath) + ".json"));
     private static readonly Dictionary<string, int> CardDoorPrefabs = new() {
@@ -125,6 +124,9 @@ namespace WouayNote.UModeCopyPasteCleaner {
           };
         }
       }
+
+      [Option("overwrite", Required = false, HelpText = "Optional. When set, overwrite the output file if already exists.")]
+      public bool Overwrite { get; set; }
     }
 
     [Verb("do-clean", HelpText = "Clean a copied base file or a directory containing copied base files.")]
@@ -251,7 +253,7 @@ namespace WouayNote.UModeCopyPasteCleaner {
 
    private static int ProcessInstall(ArgumentsInitSettings arguments) {
       //check output file does not exist if no force option
-      if (File.Exists(SettingsFilePath)) {
+      if (!arguments.Overwrite && File.Exists(SettingsFilePath)) {
         Console.Out.WriteLine("Operation aborted as a settings file already exists: '" + SettingsFilePath + "'.");
         return 1;
       }
@@ -298,7 +300,7 @@ namespace WouayNote.UModeCopyPasteCleaner {
                   "assets/prefabs/voiceaudio/boombox/boombox.deployed.prefab"
                 }.ToList(),
                 setFlagsOfPrefabs = new() {
-                  { "assets/content/props/fog machine/fogmachine.prefab", new() { new("On", true), new("Reserved5", true), new("Reserved6", true), new("Reserved10", true) } },
+                  { "assets/content/props/fog machine/fogmachine.prefab", new() { new("On", true), new("Reserved5", true), new("Reserved6", true), new("Reserved8", true), new("Reserved10", true) } },
                   { "assets/content/props/strobe light/strobelight.prefab", new() { new("On", true), new("Reserved6", true) } },
                   { "assets/prefabs/deployable/ceiling light/ceilinglight.deployed.prefab", new() { new("On", true), new("Reserved8", true) } },
                   { "assets/prefabs/deployable/fireplace/fireplace.deployed.prefab", new() { new("On", true) } },
@@ -307,8 +309,9 @@ namespace WouayNote.UModeCopyPasteCleaner {
                   { "assets/prefabs/deployable/playerioents/electricheater/electrical.heater.prefab", new() { new("On", true), new("Reserved8", true) } },
                   { "assets/prefabs/deployable/playerioents/lights/flasherlight/electric.flasherlight.deployed.prefab", new() { new("On", true), new("Reserved1", true), new("Reserved2", true), new("Reserved8", true) } },
                   { "assets/prefabs/deployable/playerioents/lights/simplelight.prefab", new() { new("On", true), new("Reserved8", true) } },
-                  { "assets/prefabs/deployable/playerioents/lights/sirenlight/electric.sirenlight.deployed.prefab", new() { new("On", true), new("Reserved8", true) } },
+                  { "assets/prefabs/deployable/playerioents/lights/sirenlight/electric.sirenlight.deployed.prefab", new() { new("On", true), new("Reserved1", true), new("Reserved2", true), new("Reserved8", true) } },
                   { "assets/prefabs/deployable/search light/searchlight.deployed.prefab", new() { new("On", true), new("Reserved8", true) } },
+                  { "assets/prefabs/deployable/tuna can wall lamp/tunalight.deployed.prefab", new() { new("On", true) } },
                   { "assets/prefabs/misc/chinesenewyear/chineselantern/chineselantern.deployed.prefab", new() { new("On", true) } },
                   { "assets/prefabs/misc/chinesenewyear/chineselantern/chineselantern_white.deployed.prefab", new() { new("On", true) } },
                   { "assets/prefabs/misc/halloween/candles/largecandleset.prefab", new() { new("On", true) } },
@@ -320,10 +323,10 @@ namespace WouayNote.UModeCopyPasteCleaner {
                   { "assets/prefabs/misc/permstore/industriallight/industrial.wall.lamp.red.deployed.prefab", new() { new("On", true), new("Reserved8", true) } },
                   { "assets/prefabs/misc/twitch/hobobarrel/hobobarrel.deployed.prefab", new() { new("On", true) } },
                   { "assets/prefabs/misc/xmas/neon_sign/*", new() { new("On", true), new("Locked", true), new("Reserved8", true) } },
-                  { "assets/prefabs/misc/xmas/snow_machine/models/snowmachine.prefab", new() { new("On", true), new("Reserved5", true), new("Reserved6", true), new("Reserved10", true) } }
+                  { "assets/prefabs/misc/xmas/snow_machine/models/snowmachine.prefab", new() { new("On", true), new("Reserved5", true), new("Reserved6", true), new("Reserved8", true), new("Reserved10", true) } }
                 },
                 setItemsOfPrefabs = new() {
-                  { "assets/content/props/fog machine/fogmachine.prefab", new() },
+                  { "assets/content/props/fog machine/fogmachine.prefab", new() { itemFuels(180, 0) } },
                   { "assets/prefabs/deployable/fireplace/fireplace.deployed.prefab", new() { itemWoods(1080, 0) } },
                   { "assets/prefabs/deployable/jack o lantern/jackolantern.angry.prefab", new() { itemWoods(270, 0) } },
                   { "assets/prefabs/deployable/jack o lantern/jackolantern.happy.prefab", new() { itemWoods(270, 0) } },
@@ -337,7 +340,7 @@ namespace WouayNote.UModeCopyPasteCleaner {
                   { "assets/prefabs/npc/autoturret/autoturret_deployed.prefab", new() },
                   { "assets/prefabs/npc/flame turret/flameturret.deployed.prefab", new() },
                   { "assets/prefabs/npc/sam_site_turret/sam_site_turret_deployed.prefab", new() },
-                  { "assets/prefabs/misc/xmas/snow_machine/models/snowmachine.prefab", new() }
+                  { "assets/prefabs/misc/xmas/snow_machine/models/snowmachine.prefab", new() { itemFuels(180, 0) } }
                 }
               }
             }
@@ -510,7 +513,7 @@ namespace WouayNote.UModeCopyPasteCleaner {
             JObject? flags = entity.Value<JObject?>("flags");
             if (flags == null) return;
             flags.RemoveAll();
-            filter.setFlagsOfPrefabs[entity.Value<string>("prefabname")].ForEach(property => flags.Add(new JProperty(property.Key, property.Value)));
+            filter.setFlagsOfPrefabs.Where(kvp => PrefabMatchWith(entity.Value<string>("prefabname"), kvp.Key)).Select(KeyValuePair => KeyValuePair.Value).First().ForEach(property => flags.Add(new JProperty(property.Key, property.Value)));
           });
           Console.Out.WriteLine("done.");
         }
@@ -697,7 +700,7 @@ namespace WouayNote.UModeCopyPasteCleaner {
         else if (prefabName == "assets/prefabs/misc/halloween/scarecrow/scarecrow.deployed.prefab") {
           staticNpcsData.Add(new JObject(
             new JProperty("Position", $"({prefab["pos"]?["x"]?.Value<string>()??"0.0"}, {prefab["pos"]?["y"]?.Value<string>()??"0.0"}, {prefab["pos"]?["z"]?.Value<string>()??"0.0"})"),
-            new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()??"0.0"}, {prefab["rot"]?["y"]?.Value<string>()??"0.0"}, {prefab["rot"]?["z"]?.Value<string>()??"0.0"})"),
+            new JProperty("Rotation", $"({prefab["rot"]?["x"]?.Value<string>()??"0.0"}, {prefab["rot"]?["y"]?.Value<string>()??"0.0"}, {prefab["rot"]?["z"]?.Value<string>()??"0.0"})")
           ));
         }
         //others
@@ -759,7 +762,12 @@ namespace WouayNote.UModeCopyPasteCleaner {
     }
 
     private static bool PrefabMatchWith(string? prefab, IEnumerable<string> patterns) {
-      return prefab != null && patterns.Where(pattern => pattern.Equals(prefab) || (pattern.EndsWith("/*") && prefab.StartsWith(pattern.Substring(0, pattern.Length - 1)))).Any();
+      return patterns.Where(pattern => PrefabMatchWith(prefab, pattern)).Any();
+    }
+
+    private static bool PrefabMatchWith(string? prefab, string pattern)
+    {
+      return prefab != null && (pattern.Equals(prefab) || (pattern.EndsWith("/*") && prefab.StartsWith(pattern[..^1])));
     }
 
     private static Dictionary<long, int> GetPrefabsCountPerOwnerId(JObject data) {

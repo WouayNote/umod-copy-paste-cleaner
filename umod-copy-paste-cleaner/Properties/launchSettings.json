@@ -22,7 +22,7 @@
     },
     "Create init settings": {
       "commandName": "Project",
-      "commandLineArgs": "init-settings",
+      "commandLineArgs": "init-settings --overwrite",
       "workingDirectory": "$(SolutionDir)\\test-data"
     },
     "Clean inputs to outputs": {

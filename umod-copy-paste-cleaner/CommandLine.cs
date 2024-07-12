@@ -17,7 +17,7 @@ namespace WouayNote.UModeCopyPasteCleaner {
 
     private const int SupportedJsonSettingsVersion = 2;
     private const string JsonSchemaResourceName = "settings-schema-v1";
-    private static readonly string ThisAppFilePath = Path.GetFullPath(Environment.ProcessPath);
+    private static readonly string ThisAppFilePath = Path.GetFullPath(Environment.ProcessPath ?? "");
     private static readonly string SettingsFilePath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(ThisAppFilePath) + ".\\", Path.GetFileNameWithoutExtension(ThisAppFilePath) + ".json"));
     private static readonly Dictionary<string, int> DoorCardPrefabs = new() {
       { "assets/bundled/prefabs/static/door.hinged.security.green.prefab", 0 },
@@ -89,8 +89,10 @@ namespace WouayNote.UModeCopyPasteCleaner {
         public List<string> removePrefabs = new();
         [JsonProperty(PropertyName="switchedoff-prefabs")]
         public List<string> switchOffPrefabs = new();
-        [JsonProperty(PropertyName= "removed-items-from-prefabs")]
-        public List<string> removeItemsFromPrefabs = new();
+        [JsonProperty(PropertyName = "set-flags-to-prefabs")]
+        public SortedDictionary<string, List<KeyValuePair<string, object>>> setFlagsOfPrefabs = new();
+        [JsonProperty(PropertyName = "set-items-to-prefabs")]
+        public SortedDictionary<string, List<JObject>> setItemsOfPrefabs = new();
       }
     }
 
@@ -161,9 +163,6 @@ namespace WouayNote.UModeCopyPasteCleaner {
 
       [Option("lock-remove", Required = false, HelpText = "Optional. When set, remove all code and key locks.")]
       public bool LockRemoveAll { get; set; }
-
-      [Option("removed-items-from-prefabs", Required = false, HelpText = "Optional. When set, remove all items from containers specified in filter.")]
-      public bool ContainerItemsRemoveAll { get; set; }
     }
 
     [Verb("do-space", HelpText = "Transform a copied base into Space data files.")]
@@ -227,7 +226,7 @@ namespace WouayNote.UModeCopyPasteCleaner {
       Console.Out.WriteLine("\n[Owners]");
       Dictionary<long, int> countPerOwners = GetPrefabsCountPerOwnerId(data);
       int biggestOwnerChars = countPerOwners.Keys.Select(owner => owner.ToString().Count()).Max();
-      int biggestOwnerCountChars = countPerOwners.Values.Max().ToString().Count();
+      int biggestOwnerCountChars = countPerOwners.Values.Max().ToString().Length;
       foreach (KeyValuePair<long, int> countPerOwner in countPerOwners.OrderByDescending(id => id.Value)) {
         Console.Out.WriteLine("Player " + countPerOwner.Key.ToString().PadLeft(biggestOwnerChars) + " owns " + countPerOwner.Value.ToString().PadLeft(biggestOwnerCountChars) + " prefabs");
       }
@@ -235,7 +234,7 @@ namespace WouayNote.UModeCopyPasteCleaner {
       Console.Out.WriteLine("\n[Locks]");
       int keyLocksCount = data.SelectTokens("entities[*].lock", false).Where(l => l["code"] == null).Count();
       Dictionary<string, int> countPerCodeLocks = data.SelectTokens("entities[*].lock.code", false).ToList().GroupBy(c => c.Value<string?>() ?? "").ToDictionary(g => g.Key, g => g.Count());
-      int biggestCodeLockCountChars = countPerCodeLocks.Values.Concat(Enumerable.Repeat(keyLocksCount, 1)).Max().ToString().Count();
+      int biggestCodeLockCountChars = countPerCodeLocks.Values.Concat(Enumerable.Repeat(keyLocksCount, 1)).Max().ToString().Length;
       Console.Out.WriteLine(keyLocksCount.ToString().PadLeft(biggestCodeLockCountChars) + " lock(s) with key");
       foreach (KeyValuePair<string, int> countPerCodeLock in countPerCodeLocks.OrderByDescending(code => code.Value)) {
         Console.Out.WriteLine(countPerCodeLock.Value.ToString().PadLeft(biggestCodeLockCountChars) + " lock(s) with code " + countPerCodeLock.Key);
@@ -250,7 +249,7 @@ namespace WouayNote.UModeCopyPasteCleaner {
       return 0;
     }
 
-    private static int ProcessInstall(ArgumentsInitSettings arguments) {
+   private static int ProcessInstall(ArgumentsInitSettings arguments) {
       //check output file does not exist if no force option
       if (File.Exists(SettingsFilePath)) {
         Console.Out.WriteLine("Operation aborted as a settings file already exists: '" + SettingsFilePath + "'.");
@@ -262,11 +261,15 @@ namespace WouayNote.UModeCopyPasteCleaner {
       }
       //write data to output file
       Console.Out.Write("Start writing settings file '" + SettingsFilePath + "'... ");
-      try {
-        using (StreamWriter streamWriter = File.CreateText(SettingsFilePath))
-        using (JsonTextWriter jsonWriter = new (streamWriter)) {
-          new JsonSerializer { Formatting = Formatting.Indented }.Serialize(jsonWriter, new Settings() {
-            filters = new() {
+      static JObject itemWoods(int amount, int position) => new() { { "amount", amount }, { "blueprintTarget", 0 }, { "condition", "0" }, { "dataInt", 0 }, { "id", -151838493 }, { "position", position }, { "skinid", 0 } };
+      static JObject itemFuels(int amount, int position) => new() { { "amount", amount }, { "blueprintTarget", 0 }, { "condition", "0" }, { "dataInt", 0 }, { "id", -946369541 }, { "position", position }, { "skinid", 0 } };
+      try
+      {
+        using StreamWriter streamWriter = File.CreateText(SettingsFilePath);
+        using JsonTextWriter jsonWriter = new(streamWriter);
+        new JsonSerializer { Formatting = Formatting.Indented }.Serialize(jsonWriter, new Settings()
+        {
+          filters = new() {
               new() { filterId = "clean-nothing" },
               new() {
                 filterId = "default-clean",
@@ -283,25 +286,62 @@ namespace WouayNote.UModeCopyPasteCleaner {
                   "assets/prefabs/deployable/playerioents/industrialconveyor/industrialconveyor.deployed.prefab",
                   "assets/prefabs/voiceaudio/boombox/boombox.deployed.prefab"
                 }.ToList(),
-                removeItemsFromPrefabs = new string[] {
-                }.ToList()
+                setFlagsOfPrefabs = new(),
+                setItemsOfPrefabs = new(),
               },
               new() {
-                filterId = "raidable-base-clean",
+                filterId = "raidable-base-setup",
                 removePrefabs = new string[] {
                   "assets/bundled/prefabs/autospawn/resource/*"
                 }.ToList(),
                 switchOffPrefabs = new string[] {
+                  "assets/prefabs/voiceaudio/boombox/boombox.deployed.prefab"
                 }.ToList(),
-                removeItemsFromPrefabs = new string[] {
-                  "assets/prefabs/deployable/single shot trap/guntrap.deployed.prefab",
-                  "assets/prefabs/npc/autoturret/autoturret_deployed.prefab",
-                  "assets/prefabs/npc/flame turret/flameturret.deployed.prefab"
-                }.ToList()
+                setFlagsOfPrefabs = new() {
+                  { "assets/content/props/fog machine/fogmachine.prefab", new() { new("On", true), new("Reserved5", true), new("Reserved6", true), new("Reserved10", true) } },
+                  { "assets/content/props/strobe light/strobelight.prefab", new() { new("On", true), new("Reserved6", true) } },
+                  { "assets/prefabs/deployable/ceiling light/ceilinglight.deployed.prefab", new() { new("On", true), new("Reserved8", true) } },
+                  { "assets/prefabs/deployable/fireplace/fireplace.deployed.prefab", new() { new("On", true) } },
+                  { "assets/prefabs/deployable/jack o lantern/jackolantern.angry.prefab", new() { new("On", true) } },
+                  { "assets/prefabs/deployable/jack o lantern/jackolantern.happy.prefab", new() { new("On", true) } },
+                  { "assets/prefabs/deployable/playerioents/electricheater/electrical.heater.prefab", new() { new("On", true), new("Reserved8", true) } },
+                  { "assets/prefabs/deployable/playerioents/lights/flasherlight/electric.flasherlight.deployed.prefab", new() { new("On", true), new("Reserved1", true), new("Reserved2", true), new("Reserved8", true) } },
+                  { "assets/prefabs/deployable/playerioents/lights/simplelight.prefab", new() { new("On", true), new("Reserved8", true) } },
+                  { "assets/prefabs/deployable/playerioents/lights/sirenlight/electric.sirenlight.deployed.prefab", new() { new("On", true), new("Reserved8", true) } },
+                  { "assets/prefabs/deployable/search light/searchlight.deployed.prefab", new() { new("On", true), new("Reserved8", true) } },
+                  { "assets/prefabs/misc/chinesenewyear/chineselantern/chineselantern.deployed.prefab", new() { new("On", true) } },
+                  { "assets/prefabs/misc/chinesenewyear/chineselantern/chineselantern_white.deployed.prefab", new() { new("On", true) } },
+                  { "assets/prefabs/misc/halloween/candles/largecandleset.prefab", new() { new("On", true) } },
+                  { "assets/prefabs/misc/halloween/candles/smallcandleset.prefab", new() { new("On", true) } },
+                  { "assets/prefabs/misc/halloween/cursed_cauldron/cursedcauldron.deployed.prefab", new() { new("On", true) } },
+                  { "assets/prefabs/misc/halloween/skull_fire_pit/skull_fire_pit.prefab", new() { new("On", true) } },
+                  { "assets/prefabs/misc/permstore/industriallight/industrial.wall.lamp.deployed.prefab", new() { new("On", true), new("Reserved8", true) } },
+                  { "assets/prefabs/misc/permstore/industriallight/industrial.wall.lamp.green.deployed.prefab", new() { new("On", true), new("Reserved8", true) } },
+                  { "assets/prefabs/misc/permstore/industriallight/industrial.wall.lamp.red.deployed.prefab", new() { new("On", true), new("Reserved8", true) } },
+                  { "assets/prefabs/misc/twitch/hobobarrel/hobobarrel.deployed.prefab", new() { new("On", true) } },
+                  { "assets/prefabs/misc/xmas/neon_sign/*", new() { new("On", true), new("Locked", true), new("Reserved8", true) } },
+                  { "assets/prefabs/misc/xmas/snow_machine/models/snowmachine.prefab", new() { new("On", true), new("Reserved5", true), new("Reserved6", true), new("Reserved10", true) } }
+                },
+                setItemsOfPrefabs = new() {
+                  { "assets/content/props/fog machine/fogmachine.prefab", new() },
+                  { "assets/prefabs/deployable/fireplace/fireplace.deployed.prefab", new() { itemWoods(1080, 0) } },
+                  { "assets/prefabs/deployable/jack o lantern/jackolantern.angry.prefab", new() { itemWoods(270, 0) } },
+                  { "assets/prefabs/deployable/jack o lantern/jackolantern.happy.prefab", new() { itemWoods(270, 0) } },
+                  { "assets/prefabs/deployable/single shot trap/guntrap.deployed.prefab", new() },
+                  { "assets/prefabs/deployable/tuna can wall lamp/tunalight.deployed.prefab", new() { itemFuels(18, 0) } },
+                  { "assets/prefabs/misc/chinesenewyear/chineselantern/chineselantern.deployed.prefab", new() { itemFuels(18, 0) } },
+                  { "assets/prefabs/misc/chinesenewyear/chineselantern/chineselantern_white.deployed.prefab", new() { itemFuels(18, 0) } },
+                  { "assets/prefabs/misc/halloween/cursed_cauldron/cursedcauldron.deployed.prefab", new() { itemWoods(1080, 0) } },
+                  { "assets/prefabs/misc/halloween/skull_fire_pit/skull_fire_pit.prefab", new() { itemWoods(1080, 0) } },
+                  { "assets/prefabs/misc/twitch/hobobarrel/hobobarrel.deployed.prefab", new() { itemWoods(1080, 0) } },
+                  { "assets/prefabs/npc/autoturret/autoturret_deployed.prefab", new() },
+                  { "assets/prefabs/npc/flame turret/flameturret.deployed.prefab", new() },
+                  { "assets/prefabs/npc/sam_site_turret/sam_site_turret_deployed.prefab", new() },
+                  { "assets/prefabs/misc/xmas/snow_machine/models/snowmachine.prefab", new() }
+                }
               }
             }
-          });
-        }
+        });
       }
       catch (Exception ex) {
         Console.Out.WriteLine("failed.");
@@ -322,13 +362,8 @@ namespace WouayNote.UModeCopyPasteCleaner {
       //load settings
       Console.Out.Write("Start loading '" + SettingsFilePath + "'... ");
       Settings settings;
-      string? settingsJsonSchema = Resources.ResourceManager.GetString(JsonSchemaResourceName) ?? throw new Exception("SEVERE: Unable to get schema settings resource file. Contact the programmer.");
       try {
         JObject settingsJson = JObject.Parse(File.ReadAllText(SettingsFilePath));
-        IList<ValidationError> errors = settingsJson.IsValid(JSchema.Parse(settingsJsonSchema), out errors) || errors == null ? new List<ValidationError>() : errors;
-        foreach (ValidationError error in errors) {
-          throw new Exception("Error detected at position [line " + error.LineNumber + ", char " + error.LinePosition + "]: " + error.Message);
-        }
         settings = settingsJson.ToObject<Settings>() ?? throw new Exception("Json settings deserializer returned null.");
       }
       catch (Exception ex) {
@@ -465,10 +500,31 @@ namespace WouayNote.UModeCopyPasteCleaner {
           data["entities"]?.Where(e => PrefabMatchWith(e.Value<string>("prefabname"), filter.switchOffPrefabs)).Select(e => e.SelectToken("flags.On", false)).Where(v => v != null && v.Value<bool>()).ToList().ForEach(v => v?.Parent?.Remove());
           Console.Out.WriteLine("done.");
         }
+        //switch on prefabs
+        if (filter.setFlagsOfPrefabs.Any()) {
+          Console.Out.Write("Start setting flags of prefabs entities... ");
+          data["entities"]?.Where(e => PrefabMatchWith(e.Value<string>("prefabname"), filter.setFlagsOfPrefabs.Keys)).ToList().ForEach(entity => {
+            if (entity == null) return;
+            JToken? connectedId = entity.SelectToken("IOEntity.inputs[0].connectedID", false);
+            if (connectedId != null && connectedId.Value<int>() != 0) return;
+            JObject? flags = entity.Value<JObject?>("flags");
+            if (flags == null) return;
+            flags.RemoveAll();
+            filter.setFlagsOfPrefabs[entity.Value<string>("prefabname")].ForEach(property => flags.Add(new JProperty(property.Key, property.Value)));
+          });
+          Console.Out.WriteLine("done.");
+        }
         //clean container prefabs
-        if (filter.removeItemsFromPrefabs.Any()) {
+        if (filter.setItemsOfPrefabs.Any()) {
           Console.Out.Write("Start removing items from prefabs entities... ");
-          data["entities"]?.Where(e => PrefabMatchWith(e.Value<string>("prefabname"), filter.removeItemsFromPrefabs)).Select(e => e.SelectToken("items", false)).ToList().ForEach(items => items?.Children().ToList().ForEach(item => item?.Remove()));
+          data["entities"]?.Where(e => PrefabMatchWith(e.Value<string>("prefabname"), filter.setItemsOfPrefabs.Keys)).ToList().ForEach(entity =>
+          {
+            if (entity == null) return;
+            JArray? items = entity.Value<JArray?>("items");
+            if (items == null) return;
+            items.RemoveAll();
+            filter.setItemsOfPrefabs[entity.Value<string>("prefabname")].ForEach(item => items.Add(item));
+          });
           Console.Out.WriteLine("done.");
         }
       }
@@ -690,7 +746,7 @@ namespace WouayNote.UModeCopyPasteCleaner {
       return 0;
     }
 
-    private static bool PrefabMatchWith(string? prefab, List<string> patterns) {
+    private static bool PrefabMatchWith(string? prefab, IEnumerable<string> patterns) {
       return prefab != null && patterns.Where(pattern => pattern.Equals(prefab) || (pattern.EndsWith("/*") && prefab.StartsWith(pattern.Substring(0, pattern.Length - 1)))).Any();
     }
 

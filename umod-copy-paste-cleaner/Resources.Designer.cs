@@ -59,34 +59,5 @@ namespace WouayNote.UModeCopyPasteCleaner {
                 resourceCulture = value;
             }
         }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to {
-        ///  &quot;$schema&quot;: &quot;http://json-schema.org/draft-07/schema#&quot;,
-        ///  &quot;title&quot;: &quot;Schema of the json settings file.&quot;,
-        ///  &quot;type&quot;: &quot;object&quot;,
-        ///  &quot;properties&quot;: {
-        ///    &quot;version&quot;: {
-        ///      &quot;type&quot;: &quot;number&quot;
-        ///    },
-        ///    &quot;filters&quot;: {
-        ///      &quot;type&quot;: &quot;array&quot;,
-        ///      &quot;items&quot;: {
-        ///        &quot;type&quot;: &quot;object&quot;,
-        ///        &quot;properties&quot;: {
-        ///          &quot;filter-id&quot;: {
-        ///            &quot;type&quot;: &quot;string&quot;
-        ///          },
-        ///          &quot;removed-prefabs&quot;: {
-        ///            &quot;type&quot;: &quot;array&quot;,
-        ///            &quot;items&quot;: {
-        ///              &quot;type&quot;: &quot;string&quot;
-        ///            } [rest of string was truncated]&quot;;.
-        /// </summary>
-        internal static string settings_schema_v1 {
-            get {
-                return ResourceManager.GetString("settings-schema-v1", resourceCulture);
-            }
-        }
     }
 }
